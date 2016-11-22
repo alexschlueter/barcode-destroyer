@@ -159,7 +159,7 @@ void MainWindow::importFromPath(){
                         lbl_status->setText("Error Reading: " + filep + ".txt");
                         return;
                     }
-                    code = file.readAll();
+                    code = file.readLine(13);
                     file.close();
                 } else if(cb_code->currentIndex()==1){
                     code = a->fileName().left(13);
@@ -178,7 +178,7 @@ void MainWindow::importFromPath(){
                 return;
             }
 
-            code = file.readAll();
+            code = file.readLine(13);
             file.close();
         } else if(cb_code->currentIndex()){
             code = a->fileName().left(13);

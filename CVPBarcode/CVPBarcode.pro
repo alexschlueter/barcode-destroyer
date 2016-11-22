@@ -27,7 +27,7 @@ macx {
 win32 {
     # Windows Compiler Flags
 
-	QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
 
     INCLUDEPATH += C:/openCV/include
 
@@ -41,7 +41,7 @@ win32 {
 
 unix {
 
-	QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
 
     INCLUDEPATH += /usr/include
 
