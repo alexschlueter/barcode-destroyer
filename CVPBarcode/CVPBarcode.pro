@@ -13,6 +13,42 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    detector.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    detector.h
+
+macx {
+
+    # MAC Compiler Flags
+}
+
+win32 {
+    # Windows Compiler Flags
+
+    QMAKE_CXXFLAGS += -std=c++11 -Wall -pedantic -Wno-unknown-pragmas
+
+    INCLUDEPATH += C:/openCV/include
+
+    LIBS += -LC:/openCV/bin \
+            -lopencv_core2413 \
+            -lopencv_highgui2413 \
+            -lopencv_imgproc2413
+
+    QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
+}
+
+unix {
+
+    QMAKE_CXXFLAGS += -std=c++11 -Wall -pedantic -Wno-unknown-pragmas
+
+    INCLUDEPATH += /usr/include
+
+    LIBS += -L/usr/local/lib \
+            -lopencv_core \
+            -lopencv_highgui \
+            -lopencv_imgproc
+
+    QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
+}

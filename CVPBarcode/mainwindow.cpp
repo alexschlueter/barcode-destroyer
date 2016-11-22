@@ -4,12 +4,13 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setupUI();
+    setupTable();
+    setupImport();
     this->showMaximized();
 }
 
 MainWindow::~MainWindow()
 {
-
 }
 
 void MainWindow::setupUI(){
@@ -30,13 +31,24 @@ void MainWindow::setupUI(){
     pb_import = new QPushButton("Import");
     menulayout->addWidget(pb_import);
 
-    pb_solve = new QPushButton("Solve");
-    menulayout->addWidget(pb_solve);
+    pb_solve_selected = new QPushButton("Solve selected");
+    menulayout->addWidget(pb_solve_selected);
+    pb_solve_all = new QPushButton("Solve all");
+    menulayout->addWidget(pb_solve_all);
+    pb_eval = new QPushButton("Evaluate");
+    menulayout->addWidget(pb_eval);
 
     //mainTable
     mainTable = new QTableWidget();
     mainTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    layout->addWidget(mainTable,1,0,1,2);
+    mainTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    mainTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    layout->addWidget(mainTable,1,0,1,1);
+
+
+    //settings
+    preview = new QLabel();
+    layout->addWidget(preview,1,1,1,1);
 
 
     //stausbar
@@ -44,7 +56,7 @@ void MainWindow::setupUI(){
     layout->addWidget(stausbar,2,0,1,2, Qt::AlignBottom);
     QHBoxLayout * statuslayout = new QHBoxLayout(stausbar);
     //statuslayout->setAlignment(Qt::AlignLeft);
-    lbl_status = new QLabel("Test");
+    lbl_status = new QLabel("");
     statuslayout->addWidget(lbl_status,5,Qt::AlignLeft);
     pb_status = new QProgressBar();
     pb_status->setFixedWidth(150);
@@ -52,20 +64,204 @@ void MainWindow::setupUI(){
     statuslayout->addWidget(pb_status,1,Qt::AlignRight);
     statuslayout->setMargin(0);
 
-    connect(pb_clear,SIGNAL(clicked(bool)),this,SLOT(setUp()));
-    connect(pb_import,SIGNAL(clicked(bool)),this,SLOT(addRow()));
+
+    connect(pb_clear,SIGNAL(clicked(bool)),this,SLOT(setupTable()));
+    connect(pb_import,SIGNAL(clicked(bool)),this,SLOT(import()));
+    connect(mainTable,SIGNAL(currentCellChanged(int,int,int,int)),this,SLOT(showPreview()));
+    connect(pb_eval,SIGNAL(clicked(bool)),this,SLOT(evaluate()));
+    connect(pb_solve_selected,SIGNAL(clicked(bool)),this,SLOT(detectSingle()));
+    connect(pb_solve_all,SIGNAL(clicked(bool)),this,SLOT(detectAll()));
 }
 
-void MainWindow::setUp(){
+void MainWindow::setupTable(){
     QStringList header;
+    header.append("Name");
+    header.append("Code");
+    header.append("Result");
     header.append("Path");
-    header.append("Label");
     mainTable->clear();
     mainTable->setRowCount(0);
-    mainTable->setColumnCount(2);
+    mainTable->setColumnCount(4);
     mainTable->setHorizontalHeaderLabels(header);
+    mainTable->setColumnWidth(0,400);
+    mainTable->setColumnWidth(1,200);
+    mainTable->setColumnWidth(2,200);
+    mainTable->setColumnWidth(3,800);
+    pb_solve_all->setEnabled(false);
+    pb_solve_selected->setEnabled(false);
+    pb_eval->setEnabled(false);
+    preview->clear();
+    lbl_status->setText("");
 }
 
-void MainWindow::addRow(){
+void MainWindow::import(){
+    importW->show();
+    importW->raise();
+    importW->activateWindow();
+}
+
+void MainWindow::setupImport(){
+
+    importW = new QWidget();
+    importW->setWindowTitle("Import");
+    QGridLayout * lay = new QGridLayout(importW);
+    QLabel * l1 = new QLabel("Type:");
+    lay->addWidget(l1,0,0);
+    cb_type = new QComboBox();
+    cb_type->addItem("Dir");
+    cb_type->addItem("File");
+    lay->addWidget(cb_type,0,1);
+    QLabel * l2 = new QLabel("Path:");
+    lay->addWidget(l2,1,0);
+    le_path = new QLineEdit();
+    lay->addWidget(le_path,1,1);
+    pb_openPath = new QPushButton("►");
+    pb_openPath->setFixedWidth(24);
+    lay->addWidget(pb_openPath,1,2);
+    QLabel * l3 = new QLabel("Code is in:");
+    lay->addWidget(l3,2,0);
+    cb_code = new QComboBox();
+    cb_code->addItem("seperate Textfile");
+    cb_code->addItem("Filname");
+    lay->addWidget(cb_code,2,1);
+    pb_startimport = new QPushButton("Import");
+    lay->addWidget(pb_startimport,3,2);
+
+    connect(pb_openPath,SIGNAL(clicked(bool)),this,SLOT(explorePath()));
+    connect(pb_startimport,SIGNAL(clicked(bool)),this,SLOT(importFromPath()));
+
+}
+
+void MainWindow::explorePath(){
+    QString path;
+    if(cb_type->currentIndex()==0){
+        path = QFileDialog::getExistingDirectory(importW,QString("Select Directory"),le_path->text());
+    } else if(cb_type->currentIndex()==1) {
+        path = QFileDialog::getOpenFileName(importW,"Select single File",le_path->text(),"Image Files (*.png *.jpg)");
+    }
+    if(!path.isEmpty())le_path->setText(path);
+}
+
+void MainWindow::importFromPath(){
+    if(le_path->text().isEmpty()) return;
+    int count = 0;
+    QString path = le_path->text();
+    if(cb_type->currentIndex()==0){
+        QDirIterator * it = new QDirIterator(path);
+        while(it->hasNext()){
+            QString filep = it->next();
+            if(filep.right(4).toLower()==".png" || filep.right(4).toLower() == ".jpg" || filep.right(4).toLower() == ".jpeg"){
+                QString code;
+                QFileInfo * a = new QFileInfo(filep);
+                if(cb_code->currentIndex()==0){
+                    QFile file(filep+".txt");
+                    if(!file.open(QIODevice::ReadOnly)){
+                        lbl_status->setText("Error Reading: " + filep + ".txt");
+                        return;
+                    }
+                    code = file.readAll();
+                    file.close();
+                } else if(cb_code->currentIndex()==1){
+                    code = a->fileName().left(13);
+                }
+                includeFile(filep,a->fileName(),code);
+                count++;
+            }
+        }
+    } else if(cb_type->currentIndex()==1){
+        QString code;
+        QFileInfo * a = new QFileInfo(path);
+        if(cb_code->currentIndex()==0){
+            QFile file(path+".txt");
+            if(!file.open(QIODevice::ReadOnly)){
+                lbl_status->setText("Error Reading: " + path + ".txt");
+                return;
+            }
+
+            code = file.readAll();
+            file.close();
+        } else if(cb_code->currentIndex()){
+            code = a->fileName().left(13);
+        }
+        includeFile(path,a->fileName(),code);
+        count++;
+    }
+    if(count!=0){
+        pb_solve_all->setEnabled(true);
+        pb_solve_selected->setEnabled(true);
+        pb_eval->setEnabled(true);
+    }
+    lbl_status->setText("Imported " + QString::number(count) + " barcodes");
+    importW->close();
+}
+
+void MainWindow::includeFile(QString filepath,QString name, QString code){
+    int rowcount = mainTable->rowCount();
     mainTable->setRowCount(mainTable->rowCount()+1);
+    setTableText(rowcount,0,name);
+    setTableText(rowcount,3,filepath);
+    setTableText(rowcount,1,code);
+}
+
+void MainWindow::setTableText(int r, int c, QString t){
+    QTableWidgetItem *itab = new QTableWidgetItem();
+    if(mainTable->item(r,c)!=NULL){
+        free(mainTable->item(r,c));
+    }
+    itab->setText(t);
+    mainTable->setItem(r,c,itab);
+
+}
+
+QString MainWindow::getTableText(int r, int c){
+    QTableWidgetItem *itab = mainTable->item(r,c);
+    if(itab== NULL) return "";
+    return itab->text();
+}
+
+void MainWindow::showPreview(){
+    preview->clear();
+    QString path = getTableText(mainTable->currentRow(),3);
+    if(path.isEmpty()) return;
+    QImage image = QImage(path);
+    image = image.scaledToWidth(300);
+    preview->setPixmap(QPixmap::fromImage(image));
+}
+
+void MainWindow::evaluate(){
+    int sum = mainTable->rowCount();
+    if(sum==0) return;
+    int error = 0;
+    for(int i = 0; i<sum; i++){
+        if(getTableText(i,1)!=getTableText(i,2)) error++;
+    }
+    QString result = "Total: " + QString::number(sum) + "\tCorrect: "
+            + QString::number(sum-error) + "\tErrors: " + QString::number(error)
+            + "\tErrorrate:" + QString::number((error*100)/sum) +"%";
+    lbl_status->setText(result);
+}
+
+void MainWindow::detectSingle(){
+    int cr = mainTable->currentRow();
+    Detector d(cr,getTableText(cr,3));
+    d.detect();
+    if(d.isSuccessful())
+        setTableText(cr,2,d.result());
+
+}
+
+void MainWindow::detectAll(){
+    //TODO make this multithreaded
+    int ret = QMessageBox::warning(this,"No Multithreading","There is no multithreading yet, the programm will freeze",QMessageBox::Ok,QMessageBox::Cancel);
+    if(ret == QMessageBox::Ok){
+        pb_import->setEnabled(false);
+        int max = mainTable->rowCount();
+        for(int i = 0; i<max; i++){
+            Detector d(i,getTableText(i,3));
+            d.detect();
+            if(d.isSuccessful())
+                setTableText(i,2,d.result());
+        }
+        pb_import->setEnabled(true);
+    }
 }
