@@ -41,9 +41,30 @@ QString Detector::result(){
 }
 
 bool Detector::loadImage(){
+    cv::Size scaledSize;
     cv::Mat color = cv::imread(path.toStdString());
     //Turn image to Grayscale
     cv::cvtColor(color,image,CV_BGR2GRAY);
-    //TODO maybe resize the image?
+
+    scaledSize = getNewSize( image, 500 );
+    cv::resize( image, image, scaledSize );
     return true;
+}
+
+cv::Size Detector::getNewSize( cv::Mat src, uint maxSize ) {
+    uint newHeight, newWidth;
+    float scaleX, scaleY;
+
+    scaleX = (float) maxSize / (float) src.cols;
+    scaleY = (float) maxSize / (float) src.rows;
+
+    if ( scaleX < scaleY ) {
+        newWidth = maxSize;
+        newHeight = src.rows * scaleX;
+    } else {
+        newWidth = src.cols * scaleY;
+        newHeight = maxSize;
+    }
+
+    return cv::Size(newWidth, newHeight);
 }

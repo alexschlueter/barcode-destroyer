@@ -25,6 +25,7 @@ private:
 
 
     bool loadImage();
+    cv::Size getNewSize(cv::Mat inputImage, uint maxSize );
 };
 
 #endif // DETECTOR_H
