@@ -26,6 +26,10 @@ private:
 
     bool loadImage();
     cv::Size getNewSize(cv::Mat inputImage, uint maxSize );
+    void defaultDetector();
+    void drawContourOnOriginalImage(std::vector< std::vector < cv::Point > > , uint contoursToDrawCount);
 };
+
+bool compareContourAreas ( std::vector<cv::Point> contour1, std::vector<cv::Point> contour2 );
 
 #endif // DETECTOR_H
