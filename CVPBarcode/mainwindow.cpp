@@ -256,11 +256,14 @@ void MainWindow::detectAll(){
     if(ret == QMessageBox::Ok){
         pb_import->setEnabled(false);
         int max = mainTable->rowCount();
+        pb_status->setRange(0,max);
         for(int i = 0; i<max; i++){
             Detector d(i,getTableText(i,3));
             d.detect();
             if(d.isSuccessful())
                 setTableText(i,2,d.result());
+            pb_status->setValue(i+1);
+            qApp->processEvents();
         }
         pb_import->setEnabled(true);
     }

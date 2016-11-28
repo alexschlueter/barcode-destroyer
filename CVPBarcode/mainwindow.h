@@ -18,7 +18,7 @@
 #include <QDirIterator>
 #include <detector.h>
 #include <QMessageBox>
-
+#include <QApplication>
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
