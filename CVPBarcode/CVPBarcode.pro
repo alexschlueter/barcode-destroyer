@@ -11,19 +11,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = CVPBarcode
 TEMPLATE = app
 
-
-SOURCES += main.cpp\
-        mainwindow.cpp \
-    detector.cpp
-
-HEADERS  += mainwindow.h \
-    detector.h
-
-macx {
-
-    # MAC Compiler Flags
-}
-
 win32 {
     # Windows Compiler Flags
 
@@ -52,3 +39,24 @@ unix {
 
     QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
 }
+
+HEADERS += \
+    Pipeline/gradientblurpipeline.h \
+    Pipeline/pipeline.h \
+    Steps/loaderstep.h \
+    Steps/readerstep.h \
+    Steps/showstep.h \
+    Steps/step.h \
+    detector.h \
+    mainwindow.h
+
+SOURCES += \
+    Pipeline/gradientblurpipeline.cpp \
+    Pipeline/pipeline.cpp \
+    Steps/loaderstep.cpp \
+    Steps/readerstep.cpp \
+    Steps/showstep.cpp \
+    Steps/step.cpp \
+    detector.cpp \
+    main.cpp \
+    mainwindow.cpp

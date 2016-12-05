@@ -19,6 +19,8 @@
 #include <detector.h>
 #include <QMessageBox>
 #include <QApplication>
+
+#include "Pipeline/gradientblurpipeline.h"
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

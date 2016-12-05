@@ -242,12 +242,15 @@ void MainWindow::evaluate(){
 }
 
 void MainWindow::detectSingle(){
+
     int cr = mainTable->currentRow();
     Detector d(cr,getTableText(cr,3));
     d.detect();
     if(d.isSuccessful())
         setTableText(cr,2,d.result());
 
+    //GradientBlurPipeline a;
+    //a.execute();
 }
 
 void MainWindow::detectAll(){
