@@ -205,9 +205,6 @@ void MainWindow::includeFile(QString filepath,QString name, QString code){
 
 void MainWindow::setTableText(int r, int c, QString t){
     QTableWidgetItem *itab = new QTableWidgetItem();
-    if(mainTable->item(r,c)!=NULL){
-        free(mainTable->item(r,c));
-    }
     itab->setText(t);
     mainTable->setItem(r,c,itab);
 
@@ -242,29 +239,25 @@ void MainWindow::evaluate(){
 }
 
 void MainWindow::detectSingle(){
-
     int cr = mainTable->currentRow();
-    Detector d(cr,getTableText(cr,3));
-    d.detect();
-    if(d.isSuccessful())
-        setTableText(cr,2,d.result());
-
-    //GradientBlurPipeline a;
-    //a.execute();
+    if(cr>=0){
+        GradientBlurPipeline * p = new GradientBlurPipeline(getTableText(cr,3));
+        connect(p,&Pipeline::completed,[&,cr](QString result){this->setTableText(cr,2,result);});
+        p->start();
+    }
 }
 
 void MainWindow::detectAll(){
     //TODO make this multithreaded
-    int ret = QMessageBox::warning(this,"No Multithreading","There is no multithreading yet, the programm will freeze",QMessageBox::Ok,QMessageBox::Cancel);
+    int ret = QMessageBox::warning(this,"No Multithreading","There is no multithreading, the programm may freeze or crash",QMessageBox::Ok,QMessageBox::Cancel);
     if(ret == QMessageBox::Ok){
         pb_import->setEnabled(false);
         int max = mainTable->rowCount();
         pb_status->setRange(0,max);
         for(int i = 0; i<max; i++){
-            Detector d(i,getTableText(i,3));
-            d.detect();
-            if(d.isSuccessful())
-                setTableText(i,2,d.result());
+            GradientBlurPipeline * p = new GradientBlurPipeline(getTableText(i,3));
+            connect(p,&Pipeline::completed,[&,i](QString result){this->setTableText(i,2,result);});
+            p->start();
             pb_status->setValue(i+1);
             qApp->processEvents();
         }

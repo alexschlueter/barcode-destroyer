@@ -1,14 +1,12 @@
 #include "showstep.h"
 
-ShowStep::ShowStep()
+ShowStep::ShowStep(QString name)
 {
-
+    this->name = name;
 }
 
-void ShowStep::execute(QString data){(void)data;}
-
-void ShowStep::execute(cv::Mat data){
-    this->image = data;
-    cv::imshow("Preview", image);
-    emit completed(image);
+void ShowStep::execute(void* data){
+    this->image = *static_cast<cv::Mat*>(data);
+    cv::imshow(name.toStdString(), image);
+    emit completed((void*)&image);
 }

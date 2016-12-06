@@ -14,14 +14,12 @@ class LoaderStep : public Step
 public:
     LoaderStep();
 public slots:
-    void execute(QString data);
-    void execute(cv::Mat data);
+    void execute(void* data);
 
 private:
     QString path;
     cv::Size getNewSize(cv::Mat & src, uint maxSize);
-signals:
-    completed(cv::Mat);
+
 };
 
 #endif // LOADERSTEP_H

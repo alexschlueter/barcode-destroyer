@@ -2,6 +2,7 @@
 #define STEP_H
 
 #include <QObject>
+#include <QThread>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -14,12 +15,12 @@ class Step : public QObject
 public:
     Step();
 public slots:
-    virtual void execute(QString data);
-    virtual void execute(cv::Mat data);
+    //virtual void execute(QString data);
+    //virtual void execute(cv::Mat data);
+    virtual void execute(void *data);
 
 signals:
-    completed(QString);
-    completed(cv::Mat);
+    void completed(void*);
 };
 
 #endif // STEP_H

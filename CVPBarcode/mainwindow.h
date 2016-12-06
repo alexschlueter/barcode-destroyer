@@ -16,9 +16,10 @@
 #include <QFileInfo>
 #include <QDebug>
 #include <QDirIterator>
-#include <detector.h>
 #include <QMessageBox>
 #include <QApplication>
+
+#include <QVector>
 
 #include "Pipeline/gradientblurpipeline.h"
 class MainWindow : public QMainWindow
@@ -58,6 +59,7 @@ private:
     void includeFile(QString filepath,QString name,QString code);
     void setTableText(int r, int c, QString t);
     QString getTableText(int r, int c);
+
 private slots:
     void import();
     void setupTable();

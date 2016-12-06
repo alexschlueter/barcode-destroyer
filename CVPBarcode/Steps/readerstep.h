@@ -14,12 +14,9 @@ class ReaderStep : public Step
 public:
     ReaderStep();
 public slots:
-    void execute(QString data);
-    void execute(cv::Mat data);
+    void execute(void* data);
 private:
     cv::Mat image;
-signals:
-    completed(QString);
 };
 
 #endif // READERSTEP_H

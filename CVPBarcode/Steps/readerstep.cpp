@@ -4,9 +4,10 @@ ReaderStep::ReaderStep()
 {
 
 }
-void ReaderStep::execute(QString data){(void)data;}
-void ReaderStep::execute(cv::Mat data){
-    this->image = data;
+//void ReaderStep::execute(void *data){(void)data;}
+void ReaderStep::execute(void* data){
+    this->image = *static_cast<cv::Mat*>(data);
     //TODO read the Barcode
-    emit completed(QString("1234567890123"));
+    QString result = "1234567890123";
+    emit completed((void*)&result);
 }

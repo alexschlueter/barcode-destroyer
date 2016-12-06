@@ -12,16 +12,14 @@ class ShowStep : public Step
 {
     Q_OBJECT
 public:
-    ShowStep();
+    ShowStep(QString name = "Preview");
 public slots:
-    void execute(QString data);
-    void execute(cv::Mat data);
+    //void execute(QString data);
+    void execute(void* data);
 
 private:
     cv::Mat image;
-
-signals:
-    completed(cv::Mat);
+    QString name;
 };
 
 #endif // SHOWSTEP_H

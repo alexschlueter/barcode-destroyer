@@ -5,18 +5,16 @@ LoaderStep::LoaderStep()
 
 }
 
-void LoaderStep::execute(cv::Mat data){(void)data;}
-
-void LoaderStep::execute(QString data){
-    this->path = data;
+void LoaderStep::execute(void *data){
+    this->path = *static_cast<QString*>(data);
 
     cv::Size scaledSize;
-    cv::Mat color = cv::imread(data.toStdString());
+    cv::Mat color = cv::imread(path.toStdString());
     cv::Mat image;
     cv::cvtColor(color,image,CV_BGR2GRAY);
     scaledSize = getNewSize(image,500);
     cv::resize(image,image,scaledSize);
-    emit completed(image);
+    emit completed((void*)&image);
 }
 
 

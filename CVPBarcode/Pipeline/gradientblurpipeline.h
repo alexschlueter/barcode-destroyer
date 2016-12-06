@@ -6,6 +6,7 @@
 #include "Steps/loaderstep.h"
 #include "Steps/showstep.h"
 #include "Steps/readerstep.h"
+#include "Steps/gradientblurstep.h"
 
 #include <QString>
 
@@ -16,12 +17,8 @@
 class GradientBlurPipeline : public Pipeline
 {
 public:
-    GradientBlurPipeline();
-    void execute();
-
-private:
-    void connectSteps(Step &step1, Step &step2);
-    QVector<Step> steps;
+    GradientBlurPipeline(QString path):Pipeline(path){};
+    void execute(void* data);
 };
 
 #endif // GRADIENTBLURPIPELINE_H

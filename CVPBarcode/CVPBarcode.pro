@@ -47,8 +47,8 @@ HEADERS += \
     Steps/readerstep.h \
     Steps/showstep.h \
     Steps/step.h \
-    detector.h \
-    mainwindow.h
+    mainwindow.h \
+    Steps/gradientblurstep.h
 
 SOURCES += \
     Pipeline/gradientblurpipeline.cpp \
@@ -57,6 +57,6 @@ SOURCES += \
     Steps/readerstep.cpp \
     Steps/showstep.cpp \
     Steps/step.cpp \
-    detector.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    Steps/gradientblurstep.cpp
