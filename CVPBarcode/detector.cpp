@@ -49,8 +49,6 @@ bool Detector::loadImage(){
     cv::cvtColor(color,gray,CV_BGR2GRAY);
     /*scaledSize = getNewSize( gray, 500 );
     cv::resize( gray, gray, scaledSize );*/
-    cout << gray.size() << " " << gray.type() << endl;
-    cout << "load " << (int)gray.at<uchar>(165, 951) << endl;
     return true;
 }
 
@@ -109,10 +107,10 @@ void Detector::drawRotatedRect(cv::Mat& img, cv::RotatedRect rect) {
 }
 
 void Detector::lineSegmentDetector() {
-    cout << "start " << (int)gray.at<uchar>(165, 951) << endl;
     const float angleTol = 0.1*180/CV_PI;
     const float lengthTol = 0.3;
     const float centerTol = 0.1;
+    const float scanOffsets[] = {-0.3, -0.15, 0, 0.15, 0.3};
 
     auto lsd = cv::createLineSegmentDetector(cv::LSD_REFINE_ADV);
     std::vector<cv::Vec4f> lines;
@@ -170,7 +168,7 @@ void Detector::lineSegmentDetector() {
     auto maxScoreIt = std::max_element(scores.begin(), scores.end());
     const auto &bestLine = *(lines.begin() + std::distance(scores.begin(), maxScoreIt));
 
-    cv::Mat onlyLines(gray.size(), CV_8U);
+    cv::Mat onlyLines(gray.size(), CV_8U, cv::Scalar(0));
     scoreIt = scores.begin();
     for (auto &&line : lines) {
         //cout << *scoreIt << endl;
@@ -189,13 +187,16 @@ void Detector::lineSegmentDetector() {
     float length = cv::norm(vec);
     cv::Point2f perp = {-vec.y, vec.x};
     cv::Point2f center = 0.5*(p+q);
+
     float longEnough = (gray.rows*gray.rows + gray.cols*gray.cols)/length;
     cv::LineIterator fullBisectIt(gray, center-longEnough*perp, center+longEnough*perp);
+
     int maxVar = 0, minVar = 0;
     cv::Point minPos, maxPos;
-    std::vector<int> vars;
-    cv::Mat plot(600, 1800, CV_8UC3);
-    int lastvar=0, lastposvar=0, mincnt=0;
+    cv::Rect imgRect(cv::Point(), gray.size());
+    cv::Mat plot(600, 1800, CV_8UC3, cv::Scalar(0));
+    int lastvar=0, lastposvar=0, cnt=0;
+
     for (int i = 0; i < fullBisectIt.count; i++, ++fullBisectIt) {
 
         cv::LineIterator shortBisectIt(gray, fullBisectIt.pos()-(cv::Point)perp, fullBisectIt.pos());
@@ -203,47 +204,72 @@ void Detector::lineSegmentDetector() {
         int variation = 0;
         for (int j = 0; j < shortBisectIt.count-1; j++, ++shortBisectIt, ++oldShortBisectIt) {
             //cout << fullBisectIt.pos() << " " << shortBisectIt.pos() << " " << oldShortBisectIt.pos() <<  " " << (int)**shortBisectIt << " " << (int)**oldShortBisectIt << " " << std::abs(**shortBisectIt-**oldShortBisectIt) << endl;
-            variation += std::abs(**shortBisectIt-**oldShortBisectIt);
-            if (i == 500)
+            if (i==500)
             cv::circle(color, shortBisectIt.pos(), 4, {0, 0, (double)j});
+            cv::Point2f curPos = shortBisectIt.pos();
+            cv::Point2f oldPos = oldShortBisectIt.pos();
+            int tempVar = 0;
+            for (int k = 0; k < 5; k++) {
+                cv::Point2f offset = scanOffsets[k]*vec;
+                cv::Point curPosAdjusted = curPos+offset;
+                cv::Point oldPosAdjusted = oldPos+offset;
+                if (!imgRect.contains(curPosAdjusted) || !imgRect.contains(oldPosAdjusted)) {
+                    tempVar = 0;
+                    break;
+                }
+                //cv::circle(color, curPosAdjusted, 1, {0, 255, 0});
+                tempVar += std::abs(gray.at<uchar>(curPosAdjusted)-gray.at<uchar>(oldPosAdjusted));
+            }
+            variation += tempVar;
         }
+        int posvar = variation;
         shortBisectIt = cv::LineIterator(gray, fullBisectIt.pos(), fullBisectIt.pos()+(cv::Point)perp);
         oldShortBisectIt = shortBisectIt++;
-        int posvar = variation;
         for (int j = 0; j < shortBisectIt.count-1; j++, ++shortBisectIt, ++oldShortBisectIt) {
-            variation -= std::abs(**shortBisectIt-**oldShortBisectIt);
             if (i == 500)
             cv::circle(color, shortBisectIt.pos(), 4, {(double)j, 0, 0});
+            cv::Point2f curPos = shortBisectIt.pos();
+            cv::Point2f oldPos = oldShortBisectIt.pos();
+            int tempVar = 0;
+            for (int k = 0; k < 5; k++) {
+                cv::Point2f offset = scanOffsets[k]*vec;
+                cv::Point curPosAdjusted = curPos+offset;
+                cv::Point oldPosAdjusted = oldPos+offset;
+                if (!imgRect.contains(curPosAdjusted) || !imgRect.contains(oldPosAdjusted)) {
+                    tempVar = 0;
+                    break;
+                }
+                tempVar += std::abs(gray.at<uchar>(curPosAdjusted)-gray.at<uchar>(oldPosAdjusted));
+            }
+            variation -= tempVar;
         }
-        if (i == 500) cv::circle(color, fullBisectIt.pos(), 4, {0, 255, 0});
         if (variation <= minVar) {
             minVar = variation;
             minPos = fullBisectIt.pos();
-            mincnt = vars.size()+1;
         }
         if (variation >= maxVar) {
             maxVar = variation;
             maxPos = fullBisectIt.pos();
         }
-        vars.push_back(variation);
-
-        cv::line(plot, {(int)vars.size()-1, (lastposvar+6200)/50}, {(int)vars.size(), (posvar+6200)/50}, {0, 255, 0});
-        cv::line(plot, {(int)vars.size()-1, (lastposvar-lastvar+6200)/50}, {(int)vars.size(), (posvar-variation+6200)/50}, {255, 0, 0});
-        cv::line(plot, {(int)vars.size()-1, (lastvar+6200)/50}, {(int)vars.size(), (variation+6200)/50}, {0, 0, 255});
-
+        cnt++;
+        int mii = 38000;
+        int sc = 145;
+        cv::line(plot, {(int)cnt-1, (lastposvar+mii)/sc}, {(int)cnt, (posvar+mii)/sc}, {0, 255, 0});
+        cv::line(plot, {(int)cnt-1, (lastposvar-lastvar+mii)/sc}, {(int)cnt, (posvar-variation+mii)/sc}, {255, 0, 0});
+        cv::line(plot, {(int)cnt-1, (lastvar+mii)/sc}, {(int)cnt, (variation+mii)/sc}, {0, 0, 255});
         lastvar=variation;
         lastposvar=posvar;
     }
+
+
     cout << minPos << " " << minVar << " " << maxPos << " " << maxVar << endl;
     cv::circle(color, 0.5*(minPos+maxPos), 4, {0, 0, 255});
     cv::circle(color, minPos, 4, {0, 255, 0});
     cv::circle(color, maxPos, 4, {0, 0, 255});
-    cv::circle(plot, {mincnt, (minVar+6200)/50}, 4, {255, 255, 255});
     cv::RotatedRect barcodeBB(0.5*(minPos+maxPos), {(float)cv::norm(minPos-maxPos), length}, std::atan2(minPos.y-maxPos.y, minPos.x-maxPos.x)*180/CV_PI);
     drawRotatedRect(color, barcodeBB);
     imshow("best line", color);
     imshow("plot", plot);
-    cout << gray.type() << " " << (int)gray.at<uchar>(165, 951) << endl;
 }
 
 bool compareContourAreas ( std::vector<cv::Point> contour1, std::vector<cv::Point> contour2 ) {
