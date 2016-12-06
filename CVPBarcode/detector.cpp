@@ -150,13 +150,13 @@ void Detector::lineSegmentDetector() {
             angleDist = std::min(angleDist, std::abs(180-angleDist));
             float relProjCenterDiff = (center2-center1).dot(vec1) / (length1*length1);
             float relLengthDiff = (length1-length2)/length1;
-            if (angleDist < angleTol && std::abs(relLengthDiff) < lengthTol && std::abs(relProjCenterDiff) < centerTol) {
+            if (angleDist < angleTol && std::abs(relLengthDiff) < lengthTol && std::abs(relProjCenterDiff) < centerTol && cv::norm(center1-center2)<length1) {
                 cv::RotatedRect line2Box(center2, {(float)*widthIt, length2}, 90-angle2);
                 drawRotatedRect(drawnLines, line2Box);
-                std::vector<cv::Point2f> dummy;
+                /*std::vector<cv::Point2f> dummy;
                 int intersects = cv::rotatedRectangleIntersection(boundingBox, line2Box, dummy);
-                if (intersects)
-                    ++(*scoreIt);
+                if (intersects)*/
+                ++(*scoreIt);
             } else {
                 /*cout << angle1 << " " << angle2 << " " << angleDist << " " << std::abs(relLengthDiff) << " " << std::abs(relProjCenterDiff) << endl;
                 cout << center1 << " " << center2 << " " << vec1 << " " << vec2 << endl;*/
