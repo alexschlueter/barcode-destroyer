@@ -43,12 +43,13 @@ unix {
 
     QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
 
-    INCLUDEPATH += /usr/include
+    INCLUDEPATH += /home/alex/opencv/include
 
-    LIBS += -L/usr/local/lib \
+    LIBS += -L/home/alex/opencv/lib \
             -lopencv_core \
             -lopencv_highgui \
-            -lopencv_imgproc
+            -lopencv_imgproc \
+            -lopencv_imgcodecs
 
     QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
 }

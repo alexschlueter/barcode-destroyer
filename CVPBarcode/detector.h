@@ -10,7 +10,7 @@
 class Detector
 {
 public:
-    Detector(int index, QString path, int function = 0);
+    Detector(int index, QString path, int function = 1);
 
     void detect();
     QString result();
@@ -21,12 +21,15 @@ private:
     QString path;
     QString code;
     bool successful;
-    cv::Mat image;
+    cv::Mat color;
+    cv::Mat gray;
 
 
     bool loadImage();
     cv::Size getNewSize(cv::Mat inputImage, uint maxSize );
     void defaultDetector();
+    void drawRotatedRect(cv::Mat& img, cv::RotatedRect rect);
+    void lineSegmentDetector();
     void drawContourOnOriginalImage(std::vector< std::vector < cv::Point > > , uint contoursToDrawCount);
 };
 
