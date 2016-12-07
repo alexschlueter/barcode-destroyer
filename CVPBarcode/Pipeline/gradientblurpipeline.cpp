@@ -6,14 +6,13 @@ void GradientBlurPipeline::execute(void* data){
 
     LoaderStep loader; //use this to provide some parameters
     GradientBlurStep gb;
-    ShowStep predisplay;
-    ShowStep postdisplay("After Grad/Blur");
+    ShowStep display("After Grad/Blur");
     ReaderStep reader;
 
-    connectSteps(loader,predisplay);
-    connectSteps(predisplay,gb);
-    connectSteps(gb,postdisplay);
-    connectSteps(postdisplay,reader);
+
+    connectSteps(loader,gb);
+    connectSteps(gb,display);
+    connectSteps(display,reader);
     setFinal(reader);
 
     loader.execute((void*)&path);

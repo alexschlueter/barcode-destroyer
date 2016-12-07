@@ -11,13 +11,13 @@ class Pipeline : public QObject
 {
     Q_OBJECT
 public:
-    Pipeline(QString path){this->path = path;};
+    Pipeline(QString path){this->path = path;}
     virtual void execute(void* data);
     void connectSteps(Step &step1, Step &step2);
     void setFinal(Step & step);
-    void start();
     QString path;
 public slots:
+    void start();
     void jobsdone(void* result);
 signals:
     void completed(QString);

@@ -18,9 +18,10 @@
 #include <QDirIterator>
 #include <QMessageBox>
 #include <QApplication>
-
+#include <QThread>
 #include <QVector>
 
+#include "Pipeline/pipeline.h"
 #include "Pipeline/gradientblurpipeline.h"
 class MainWindow : public QMainWindow
 {
@@ -31,6 +32,7 @@ public:
     ~MainWindow();
 
 private:
+    QVector<QThread*> threads;
     QWidget * mainWidget;
     QGridLayout * layout;
     QWidget * menubar;
@@ -57,10 +59,11 @@ private:
     QProgressBar * pb_status;
     void setupUI();
     void includeFile(QString filepath,QString name,QString code);
-    void setTableText(int r, int c, QString t);
     QString getTableText(int r, int c);
 
 private slots:
+    void setTableText(int r, int c, QString t);
+    void incrementStatus();
     void import();
     void setupTable();
     void setupImport();

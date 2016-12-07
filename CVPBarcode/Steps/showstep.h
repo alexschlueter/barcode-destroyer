@@ -14,7 +14,6 @@ class ShowStep : public Step
 public:
     ShowStep(QString name = "Preview");
 public slots:
-    //void execute(QString data);
     void execute(void* data);
 
 private:

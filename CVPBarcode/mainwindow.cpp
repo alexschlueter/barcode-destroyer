@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#define THREADCOUNT 4
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -7,10 +8,20 @@ MainWindow::MainWindow(QWidget *parent)
     setupTable();
     setupImport();
     this->showMaximized();
+    for(int i = 0; i<THREADCOUNT;i++){
+        threads.append(new QThread);
+        threads[i]->start();
+    }
 }
 
 MainWindow::~MainWindow()
 {
+    for(int i = 0; i<THREADCOUNT; i++){
+        threads[i]->quit();
+    }
+    for(int i = 0; i<THREADCOUNT; i++){
+        threads[i]->wait(100);
+    }
 }
 
 void MainWindow::setupUI(){
@@ -241,9 +252,13 @@ void MainWindow::evaluate(){
 void MainWindow::detectSingle(){
     int cr = mainTable->currentRow();
     if(cr>=0){
-        GradientBlurPipeline * p = new GradientBlurPipeline(getTableText(cr,3));
-        connect(p,&Pipeline::completed,[&,cr](QString result){this->setTableText(cr,2,result);});
-        p->start();
+        GradientBlurPipeline * pipe = new GradientBlurPipeline(getTableText(cr,3));
+        pipe->moveToThread(threads[0]);
+        connect(pipe,&Pipeline::completed,[this,pipe,cr](QString result){
+            QMetaObject::invokeMethod(this,"setTableText",Qt::QueuedConnection,Q_ARG(int,cr),Q_ARG(int,2),Q_ARG(QString,result));
+            pipe->deleteLater();
+        });
+        QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
     }
 }
 
@@ -251,16 +266,23 @@ void MainWindow::detectAll(){
     //TODO make this multithreaded
     int ret = QMessageBox::warning(this,"No Multithreading","There is no multithreading, the programm may freeze or crash",QMessageBox::Ok,QMessageBox::Cancel);
     if(ret == QMessageBox::Ok){
-        pb_import->setEnabled(false);
         int max = mainTable->rowCount();
-        pb_status->setRange(0,max);
+        pb_status->setRange(1,max);
         for(int i = 0; i<max; i++){
-            GradientBlurPipeline * p = new GradientBlurPipeline(getTableText(i,3));
-            connect(p,&Pipeline::completed,[&,i](QString result){this->setTableText(i,2,result);});
-            p->start();
-            pb_status->setValue(i+1);
-            qApp->processEvents();
+            GradientBlurPipeline * pipe = new GradientBlurPipeline(getTableText(i,3));
+            pipe->moveToThread(threads[i%THREADCOUNT]);
+            connect(pipe,&Pipeline::completed,[this,pipe,i](QString result){
+                QMetaObject::invokeMethod(this,"setTableText",Qt::QueuedConnection,Q_ARG(int,i),Q_ARG(int,2),Q_ARG(QString,result));
+                QMetaObject::invokeMethod(this,"incrementStatus",Qt::QueuedConnection);
+                pipe->deleteLater();
+            });
+            QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
+
+            //qApp->processEvents();
         }
-        pb_import->setEnabled(true);
     }
+}
+
+void MainWindow::incrementStatus(){
+    pb_status->setValue(pb_status->value()+1);
 }

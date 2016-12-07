@@ -2,7 +2,7 @@
 
 ShowStep::ShowStep(QString name)
 {
-    this->name = name;
+    this->name = name + " (" +QString::number((long long)QThread::currentThreadId(),16) + ")";
 }
 
 void ShowStep::execute(void* data){

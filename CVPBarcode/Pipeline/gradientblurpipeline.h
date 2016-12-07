@@ -17,7 +17,7 @@
 class GradientBlurPipeline : public Pipeline
 {
 public:
-    GradientBlurPipeline(QString path):Pipeline(path){};
+    GradientBlurPipeline(QString path):Pipeline(path){}
     void execute(void* data);
 };
 

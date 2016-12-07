@@ -4,7 +4,7 @@ ReaderStep::ReaderStep()
 {
 
 }
-//void ReaderStep::execute(void *data){(void)data;}
+
 void ReaderStep::execute(void* data){
     this->image = *static_cast<cv::Mat*>(data);
     //TODO read the Barcode
