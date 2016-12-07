@@ -110,9 +110,10 @@ void Detector::lineSegmentDetector() {
     const float angleTol = 0.1*180/CV_PI;
     const float lengthTol = 0.3;
     const float centerTol = 0.1;
-    const float scanOffsets[] = {-0.3, -0.15, 0, 0.15, 0.3};
+    const std::array<float, 5> scanOffsets = {-0.3, -0.15, 0, 0.15, 0.3};
+    const float softMinMaxRatio = 0.2;
 
-    auto lsd = cv::createLineSegmentDetector(cv::LSD_REFINE_ADV);
+    auto lsd = cv::createLineSegmentDetector(cv::LSD_REFINE_ADV); // try other flags
     std::vector<cv::Vec4f> lines;
     std::vector<double> widths;
     lsd->detect(gray, lines, widths);
@@ -191,7 +192,7 @@ void Detector::lineSegmentDetector() {
     float longEnough = (gray.rows*gray.rows + gray.cols*gray.cols)/length;
     cv::LineIterator fullBisectIt(gray, center-longEnough*perp, center+longEnough*perp);
 
-    int maxVar = 0, minVar = 0;
+    int maxVar = std::numeric_limits<int>::min(), minVar = std::numeric_limits<int>::max();
     cv::Point minPos, maxPos;
     cv::Rect imgRect(cv::Point(), gray.size());
     cv::Mat plot(600, 1800, CV_8UC3, cv::Scalar(0));
@@ -209,8 +210,8 @@ void Detector::lineSegmentDetector() {
             cv::Point2f curPos = shortBisectIt.pos();
             cv::Point2f oldPos = oldShortBisectIt.pos();
             int tempVar = 0;
-            for (int k = 0; k < 5; k++) {
-                cv::Point2f offset = scanOffsets[k]*vec;
+            for (const auto &scanOffset : scanOffsets) {
+                cv::Point2f offset = scanOffset*vec;
                 cv::Point curPosAdjusted = curPos+offset;
                 cv::Point oldPosAdjusted = oldPos+offset;
                 if (!imgRect.contains(curPosAdjusted) || !imgRect.contains(oldPosAdjusted)) {
@@ -231,8 +232,8 @@ void Detector::lineSegmentDetector() {
             cv::Point2f curPos = shortBisectIt.pos();
             cv::Point2f oldPos = oldShortBisectIt.pos();
             int tempVar = 0;
-            for (int k = 0; k < 5; k++) {
-                cv::Point2f offset = scanOffsets[k]*vec;
+            for (const auto &scanOffset : scanOffsets) {
+                cv::Point2f offset = scanOffset*vec;
                 cv::Point curPosAdjusted = curPos+offset;
                 cv::Point oldPosAdjusted = oldPos+offset;
                 if (!imgRect.contains(curPosAdjusted) || !imgRect.contains(oldPosAdjusted)) {
@@ -243,13 +244,15 @@ void Detector::lineSegmentDetector() {
             }
             variation -= tempVar;
         }
-        if (variation <= minVar) {
+
+        if (variation < (1.0f+softMinMaxRatio)*minVar) {
             minVar = variation;
             minPos = fullBisectIt.pos();
         }
-        if (variation >= maxVar) {
-            maxVar = variation;
+        if (variation > (1.0f-softMinMaxRatio)*maxVar) {
             maxPos = fullBisectIt.pos();
+            if (variation > maxVar)
+                maxVar = variation;
         }
         cnt++;
         int mii = 38000;

@@ -6,6 +6,8 @@
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include <QString>
+#include <limits>
+#include <array>
 
 class Detector
 {
