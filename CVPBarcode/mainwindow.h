@@ -16,9 +16,11 @@
 #include <QFileInfo>
 #include <QDebug>
 #include <QDirIterator>
-#include <detector.h>
 #include <QMessageBox>
 #include <QApplication>
+#include <QThread>
+#include <QVector>
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -28,6 +30,7 @@ public:
     ~MainWindow();
 
 private:
+    QVector<QThread*> threads;
     QWidget * mainWidget;
     QGridLayout * layout;
     QWidget * menubar;
@@ -54,9 +57,11 @@ private:
     QProgressBar * pb_status;
     void setupUI();
     void includeFile(QString filepath,QString name,QString code);
-    void setTableText(int r, int c, QString t);
     QString getTableText(int r, int c);
+
 private slots:
+    void setTableText(int r, int c, QString t);
+    void incrementStatus();
     void import();
     void setupTable();
     void setupImport();

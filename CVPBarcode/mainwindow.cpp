@@ -1,4 +1,9 @@
 #include "mainwindow.h"
+#include "Pipeline/pipeline.h"
+#include "Pipeline/gradientblurpipeline.h"
+#include "Pipeline/lsdpipeline.h"
+
+#define THREADCOUNT 4
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -7,10 +12,20 @@ MainWindow::MainWindow(QWidget *parent)
     setupTable();
     setupImport();
     this->showMaximized();
+    for(int i = 0; i<THREADCOUNT;i++){
+        threads.append(new QThread);
+        threads[i]->start();
+    }
 }
 
 MainWindow::~MainWindow()
 {
+    for(int i = 0; i<THREADCOUNT; i++){
+        threads[i]->quit();
+    }
+    for(int i = 0; i<THREADCOUNT; i++){
+        threads[i]->wait(100);
+    }
 }
 
 void MainWindow::setupUI(){
@@ -205,9 +220,6 @@ void MainWindow::includeFile(QString filepath,QString name, QString code){
 
 void MainWindow::setTableText(int r, int c, QString t){
     QTableWidgetItem *itab = new QTableWidgetItem();
-    if(mainTable->item(r,c)!=NULL){
-        free(mainTable->item(r,c));
-    }
     itab->setText(t);
     mainTable->setItem(r,c,itab);
 
@@ -243,28 +255,34 @@ void MainWindow::evaluate(){
 
 void MainWindow::detectSingle(){
     int cr = mainTable->currentRow();
-    Detector d(cr,getTableText(cr,3));
-    d.detect();
-    if(d.isSuccessful())
-        setTableText(cr,2,d.result());
-
+    if(cr>=0){
+        auto pipe = new LSDPipeline(getTableText(cr,3));
+        pipe->moveToThread(threads[0]);
+        connect(pipe,&Pipeline::completed,[this,pipe,cr](QString result){
+            QMetaObject::invokeMethod(this,"setTableText",Qt::QueuedConnection,Q_ARG(int,cr),Q_ARG(int,2),Q_ARG(QString,result));
+            pipe->deleteLater();
+        });
+        QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
+    }
 }
 
 void MainWindow::detectAll(){
-    //TODO make this multithreaded
-    int ret = QMessageBox::warning(this,"No Multithreading","There is no multithreading yet, the programm will freeze",QMessageBox::Ok,QMessageBox::Cancel);
-    if(ret == QMessageBox::Ok){
-        pb_import->setEnabled(false);
-        int max = mainTable->rowCount();
-        pb_status->setRange(0,max);
-        for(int i = 0; i<max; i++){
-            Detector d(i,getTableText(i,3));
-            d.detect();
-            if(d.isSuccessful())
-                setTableText(i,2,d.result());
-            pb_status->setValue(i+1);
-            qApp->processEvents();
-        }
-        pb_import->setEnabled(true);
+    int max = mainTable->rowCount();
+    pb_status->setRange(1,max);
+    for(int i = 0; i<max; i++){
+        auto pipe = new LSDPipeline(getTableText(i,3));
+        pipe->moveToThread(threads[i%THREADCOUNT]);
+        connect(pipe,&Pipeline::completed,[this,pipe,i](QString result){
+            QMetaObject::invokeMethod(this,"setTableText",Qt::QueuedConnection,Q_ARG(int,i),Q_ARG(int,2),Q_ARG(QString,result));
+            QMetaObject::invokeMethod(this,"incrementStatus",Qt::QueuedConnection);
+            pipe->deleteLater();
+        });
+        QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
+
+        //qApp->processEvents();
     }
+}
+
+void MainWindow::incrementStatus(){
+    pb_status->setValue(pb_status->value()+1);
 }
