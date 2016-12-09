@@ -8,11 +8,11 @@ void Pipeline::start(){
 void Pipeline::execute(void *data){std::cout << data << std::endl;} // just do something
 
 void Pipeline::connectSteps(Step &step1, Step &step2){
-    connect(&step1,SIGNAL(completed(void*)),&step2,SLOT(execute(void*)));
+    connect(&step1,SIGNAL(completed(void*)),&step2,SLOT(execute(void*)),Qt::DirectConnection);
 }
 
 void Pipeline::setFinal(Step &step){
-    connect(&step,SIGNAL(completed(void*)),this,SLOT(jobsdone(void*)));
+    connect(&step,SIGNAL(completed(void*)),this,SLOT(jobsdone(void*)),Qt::DirectConnection);
 }
 
 void Pipeline::jobsdone(void *result){

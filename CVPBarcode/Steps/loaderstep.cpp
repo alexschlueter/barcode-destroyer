@@ -7,7 +7,6 @@ LoaderStep::LoaderStep()
 
 void LoaderStep::execute(void *data){
     this->path = *static_cast<QString*>(data);
-
     cv::Size scaledSize;
     cv::Mat color = cv::imread(path.toStdString());
     cv::Mat *image = new cv::Mat;

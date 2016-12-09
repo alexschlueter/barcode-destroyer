@@ -21,6 +21,11 @@
 #include <QThread>
 #include <QVector>
 
+
+#include "Pipeline/pipeline.h"
+#include "Pipeline/gradientblurpipeline.h"
+#include "Pipeline/lsdpipeline.h"
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
