@@ -11,10 +11,21 @@ void LSDStep::drawRotatedRect(Mat& img, RotatedRect rect) {
         line(img, points[i], points[(i+1)%4], {0, 0, 255}, 2);
 }
 
+/**
+ * @brief LSDStep::maxVariationDifferenceAlongLine
+ * @param start start point of the scan line
+ * @param dir direction from the start point to scan
+ * @return point with maximal variation difference (likely boundary of a barcode)
+ */
 Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point2f &dir) {
-    const std::array<float, 5> scanOffsets = {-0.3, -0.15, 0, 0.15, 0.3};
+
+    // need vector perpendicular to dir to scan multiple lines above and below the actual line
     Point2f perp = {-dir.y, dir.x};
 
+    // use cv::LineIterator to iterate over pixels in the scan line
+    // we want the line to go through the whole image, so we need to give the constructor a point which lies
+    // in the correct direction, but outside the image boundary
+    // opencv will then clip the line to the image
     float longEnough = (gray.rows*gray.rows + gray.cols*gray.cols)/norm(dir);
     LineIterator fullBisectIt(gray, start, start+longEnough*dir);
 
@@ -22,8 +33,10 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
     /*std::vector<int> vars;
     vars.reserve(fullBisectIt.count);*/
     Point maxPos;
+    // create Rect of the same size as the image for simple bound checking with Rect::contains
     Rect imgRect(Point(), gray.size());
 
+    // iterate over pixels on scan line
     for (int i = 0; i < fullBisectIt.count; i++, ++fullBisectIt) {
 
         LineIterator shortBisectIt(gray, fullBisectIt.pos()-(Point)dir, fullBisectIt.pos());
@@ -71,7 +84,12 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
         }
         //vars.push_back(variation);
     }
-    /*int firstMax, firstMaxIdx = -1;
+
+
+    /*
+    // experiment to choose the local maximum closest to start instead of the global maximum
+    // problem: calibration of the 0.4/0.7 constants, sometimes box too small
+    int firstMax, firstMaxIdx = -1;
     cout << "vars size " << vars.size() << " maxvar " << maxVar << endl;
     for (size_t i = 0; i < vars.size(); i++) {
         int var = vars[i];
@@ -86,6 +104,10 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
             break;
         }
     }
+
+    // experiment to extend the boundary slightly as long as the variation difference doesn't drop too
+    // low relative to the max
+    // problem: calibration of 0.8, box too large in some cases
     for (; (uint)firstMaxIdx < vars.size(); firstMaxIdx++) {
         if (vars[firstMaxIdx] < 0.8*firstMax) {
             firstMaxIdx--;
@@ -94,7 +116,9 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
     }
     fullBisectIt = LineIterator(gray, start, start+longEnough*dir);
     for (; firstMaxIdx > 0; firstMaxIdx--) ++fullBisectIt;
-    return fullBisectIt.pos();*/
+    return fullBisectIt.pos();
+    */
+
     return maxPos;
 }
 

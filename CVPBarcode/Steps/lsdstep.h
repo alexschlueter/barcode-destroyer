@@ -12,7 +12,7 @@ class LSDStep : public Step
 {
     Q_OBJECT
 public:
-    LSDStep() {}
+    LSDStep() : scanOffsets{-0.3, -0.15, 0, 0.15, 0.3} {}
 
 public slots:
     void execute(void* data);
@@ -22,6 +22,7 @@ private:
     const float lengthTol = 0.3f;
     const float projCenterTol = 0.1f;
     const float centerDistTol = 1.0f;
+    const std::array<float, 5> scanOffsets;
 
     cv::Mat gray;
 
