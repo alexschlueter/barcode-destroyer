@@ -31,6 +31,7 @@ private:
     cv::Size getNewSize(cv::Mat inputImage, uint maxSize );
     void defaultDetector();
     void drawRotatedRect(cv::Mat& img, cv::RotatedRect rect);
+    cv::Point maxVariationDifferenceAlongLine(const cv::Point2f &start, const cv::Point2f &dir);
     void lineSegmentDetector();
     void drawContourOnOriginalImage(std::vector< std::vector < cv::Point > > , uint contoursToDrawCount);
 };
