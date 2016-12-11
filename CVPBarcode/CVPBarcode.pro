@@ -28,14 +28,14 @@ win32 {
 
 unix {
 
-    QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic -Wno-unknown-pragmas
 
     LIBS += -lopencv_core \
             -lopencv_highgui \
             -lopencv_imgproc \
             -lopencv_imgcodecs
 
-    QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
+    QMAKE_CXXFLAGS_WARN_ON = -Wno-reorder
 }
 
 HEADERS += \
@@ -48,7 +48,8 @@ HEADERS += \
     mainwindow.h \
     Steps/gradientblurstep.h \
     Pipeline/lsdpipeline.h \
-    Steps/lsdstep.h
+    Steps/lsdstep.h \
+    Steps/templatematchingstep.h
 
 SOURCES += \
     Pipeline/gradientblurpipeline.cpp \
@@ -61,4 +62,5 @@ SOURCES += \
     mainwindow.cpp \
     Steps/gradientblurstep.cpp \
     Pipeline/lsdpipeline.cpp \
-    Steps/lsdstep.cpp
+    Steps/lsdstep.cpp \
+    Steps/templatematchingstep.cpp
