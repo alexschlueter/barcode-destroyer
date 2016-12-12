@@ -116,18 +116,28 @@ void TemplateMatchingStep::execute(void* data){
     cout << endl << endl << endl;
     imshow("plot", plot);
 
+    float deltaO = 2*w;
+    float deltaW = 2*deltaO/95;
+
+    int wmin = w-deltaW;
+    int wmax = w+deltaW+0.5;
+
+
     double probabilities[6][10];
-    for (int pos = 0; pos < 6; pos++) {
-        for (int digit = 0; digit < 10; digit++) {
+    for (int digit = 0; digit < 10; digit++) {
+        std::vector<Cell> leftBound, rightBound;
+        if (w-delta)
+        for (const auto &cell : cellsPerDigit[digit]) {
+
+        }
+        for (int pos = 0; pos < 6; pos++) {
+
+
             probabilities[pos][digit] = 0;
 
             float o = 3*w + pos*7*w;
-            float deltaO = 2*w;
-            float deltaW = 2*deltaO/95;
-            int wmin = w-deltaW;
             int omin = o-deltaO;
-            int wmax = ceil(w+deltaW);
-            int omax = ceil(o+deltaO);
+            int omax = o+deltaO+0.5;
 
             /*double distSum = 0;
             int parity = 1;
