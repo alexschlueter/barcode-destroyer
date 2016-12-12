@@ -106,6 +106,7 @@ def updateCells(cells):
 
 colors = ['r', 'b', 'g', 'm', 'c']
 for d,rs in upc:
+    rs = list(reversed(rs))
     print(rs)
     rs += [1]
     cells = [([(0,0),(1,0),(1,1),(0,1)],[])]
@@ -145,8 +146,8 @@ for d,rs in upc:
 
     cellres = []
     j = 0
-    # outf = open(str(d)+'.dat', 'w')
-    # outf.write('nr, area, centx, centy, pix0, pix1, pix2, pix3, pix4, pix5\n')
+    outf = open(str(d)+'.dat', 'w')
+    outf.write('nr, area, centx, centy, pix0, pix1, pix2, pix3, pix4, pix5, vertex1x, vertex1y, vertex2x, ...\n')
     for cell,_ in cells:
         mx = 0
         my = 0
@@ -180,10 +181,12 @@ for d,rs in upc:
         plt.plot([centx], [centy], 'x')
         plt.annotate('{:.4f}\n'.format(area)+str(pixoffs), xy=(centx, centy))
         cellres += [(cell, area, pixoffs)]
-        # outf.write(str(j) + ', ' + str(area) + ', ' + str(centx) + ', ' + str(centy) + ', ')
-        # for p in pixoffs[:-1]:
-        #     outf.write(str(p) + ', ')
-        # outf.write(str(pixoffs[-1]) + '\n')
+        outf.write(str(j) + ', ' + str(area) + ', ' + str(centx) + ', ' + str(centy) + ', ')
+        for p in pixoffs:
+            outf.write(str(p) + ', ')
+        for v in cell[:-1]:
+            outf.write(str(v[0]) + ', ' + str(v[1]) + ', ')
+        outf.write(str(cell[-1][0]) + ', ' + str(cell[-1][1]) + '\n')
         j += 1
     print(cellres)
-    plt.show()
+    # plt.show()
