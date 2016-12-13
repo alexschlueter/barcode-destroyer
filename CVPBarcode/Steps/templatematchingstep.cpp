@@ -89,7 +89,7 @@ bool Cell::clip(double clipCoord, ClipDirection dir)
     return true;
 }
 
-void Cell::draw(Mat &img, int offsetX, int offsetY, RNG &rng, float scaleX=400, float scaleY=100) const
+void Cell::draw(Mat &img, int offsetX, int offsetY, RNG &rng, float scaleX=400, float scaleY=50) const
 {
     Scalar color(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
     auto shiftedVerts = std::make_unique<Point[]>(vertices.size());
@@ -250,13 +250,16 @@ bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode
 
     cout << lowMean << " " << lowVar << " " << highMean << " " << highVar << " " << var << endl << endl;
 
-    double deltaO = 2*w;
+    // TODO: tune parameters
+    //double deltaO = 2*w;
+    double deltaO = 3*w;
     double deltaW = 2*deltaO/95;
 
     int wmin = w-deltaW;
     int wmax = ceil(w+deltaW);
     double wClipLeft = w-deltaW-wmin;
     double wClipRight = w+deltaW-(int)(w+deltaW);
+    // TODO: bounds checking
 
     cout << "wClipLeft " << wClipLeft << " wClipRight " << wClipRight << endl;
     cellPlot.create(800, 1000, CV_8UC3);
@@ -465,7 +468,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode
             minDigit = digit;
         }
     }
-    if (minDigit == -1) return false;
+    if (minDigit == -1) return false; // TODO: all costs +inf?? not good
 
     int types[12];
     barcode[12] = minDigit;
