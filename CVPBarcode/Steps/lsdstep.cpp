@@ -210,12 +210,12 @@ void LSDStep::execute(void *data){
     }
 
     Mat color;
-    Mat *result = new Mat;
-    cvtColor(gray, *result, COLOR_GRAY2BGR);
+    Mat visualization;
+    cvtColor(gray, visualization, COLOR_GRAY2BGR);
     applyColorMap(onlyLines, color, COLORMAP_JET);
-    color.copyTo(*result, onlyLines);
+    color.copyTo(visualization, onlyLines);
     // draw best line in white
-    line(*result, {(int)bestLine[0], (int)bestLine[1]}, {(int)bestLine[2], (int)bestLine[3]}, {255, 255, 255});
+    line(visualization, {(int)bestLine[0], (int)bestLine[1]}, {(int)bestLine[2], (int)bestLine[3]}, {255, 255, 255});
 
     // end points of best line
     Point2f p(bestLine[0], bestLine[1]);
@@ -223,8 +223,13 @@ void LSDStep::execute(void *data){
     // vector q -> p
     Point2f vec = p - q;
     float length = norm(vec);
-    // direction perpendicular to the best line
-    Point2f lineDir = {-vec.y, vec.x};
+    // direction perpendicular to the best line, pointing to the right
+    Point2f lineDir;
+    if (vec.x > 0) {
+        lineDir = {-vec.y, vec.x};
+    } else {
+        lineDir = {vec.y, -vec.x};
+    }
     Point2f center = 0.5*(p+q);
 
     // calculate boundaries of the barcode in both directions
@@ -233,14 +238,16 @@ void LSDStep::execute(void *data){
 
     // draw estimated bounding box for the barcode
     RotatedRect barcodeBB(0.5*(leftBoundary+rightBoundary), {(float)norm(leftBoundary-rightBoundary), length}, std::atan2(leftBoundary.y-rightBoundary.y, leftBoundary.x-rightBoundary.x)*180/CV_PI);
-    drawRotatedRect(*result, barcodeBB);
+    drawRotatedRect(visualization, barcodeBB);
 
     // draw center and boundary points
-    circle(*result, 0.5*(leftBoundary+rightBoundary), 4, {0, 0, 255});
-    circle(*result, leftBoundary, 4, {0, 255, 0});
-    circle(*result, rightBoundary, 4, {0, 0, 255});
+    circle(visualization, 0.5*(leftBoundary+rightBoundary), 4, {0, 0, 255});
+    circle(visualization, leftBoundary, 4, {0, 255, 0});
+    circle(visualization, rightBoundary, 4, {0, 0, 255});
 
-    // return visualization image for now, should probably later return
-    // boundary points or image cropped to barcode box
-    emit completed((void*)result);
+    // show visualization
+    imshow("LSDStep", visualization);
+
+    LSDResult *res = new LSDResult(gray, leftBoundary, rightBoundary, length);
+    emit completed((void*)res);
 }

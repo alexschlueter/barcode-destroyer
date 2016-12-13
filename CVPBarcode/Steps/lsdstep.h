@@ -30,4 +30,13 @@ private:
     cv::Point maxVariationDifferenceAlongLine(const cv::Point2f &start, const cv::Point2f &dir);
 };
 
+struct LSDResult {
+    cv::Mat img;
+    cv::Point leftBnd;
+    cv::Point rightBnd;
+    float height;
+
+    LSDResult(cv::Mat _img, cv::Point _leftBnd, cv::Point _rightBnd, float _height) : img(_img), leftBnd(_leftBnd), rightBnd(_rightBnd), height(_height) {}
+};
+
 #endif // LSDSTEP_H
