@@ -114,6 +114,19 @@ const int TemplateMatchingStep::patterns[][4] = {
        {3, 1, 1, 2}
 };
 
+const int TemplateMatchingStep::firstDigitPatterns[][6] = {
+       {0, 0, 0, 0, 0, 0},
+       {0, 0, 1, 0, 1, 1},
+       {0, 0, 1, 1, 0, 1},
+       {0, 0, 1, 1, 1, 0},
+       {0, 1, 0, 0, 1, 1},
+       {0, 1, 1, 0, 0, 1},
+       {0, 1, 1, 1, 0, 0},
+       {0, 1, 0, 1, 0, 1},
+       {0, 1, 0, 1, 1, 0},
+       {0, 1, 1, 0, 1, 0}
+};
+
 TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 {
     QDirIterator itA(cellpath + "/A"), itB(cellpath + "/B");
@@ -424,17 +437,31 @@ void TemplateMatchingStep::execute(void* data){
         }
     }
 
-    int barcode[6];
+    int barcode[7];
     int types[6];
-    barcode[5] = minDigit;
+    barcode[6] = minDigit;
     types[5] = minType;
     for (int pos = 4; pos >= 0; pos--) {
-        barcode[pos] = minDigits[pos][types[pos+1]][barcode[pos+1]];
-        types[pos] = minTypes[pos][types[pos+1]][barcode[pos+1]];
+        barcode[pos+1] = minDigits[pos][types[pos+1]][barcode[pos+2]];
+        types[pos] = minTypes[pos][types[pos+1]][barcode[pos+2]];
+    }
+
+    for (int firstDigit = 0; firstDigit < 10; firstDigit++) {
+        bool found = true;
+        for (int i = 0; i < 6; i++) {
+            if (firstDigitPatterns[firstDigit][i] != types[i]) {
+                found = false;
+                break;
+            }
+        }
+        if (found) {
+            barcode[0] = firstDigit;
+            break;
+        }
     }
 
     QString *result = new QString();
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
         *result += QString::number(barcode[i]);
     }
     emit completed((void*)result);

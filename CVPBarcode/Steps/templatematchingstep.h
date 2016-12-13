@@ -64,6 +64,7 @@ private:
     const double alpha = 0.1;
 
     static const int patterns[][4];
+    static const int firstDigitPatterns[][6];
     std::vector<Cell> cellsPerDigit[2][10];
     cv::Mat cellPlot;
     cv::RNG rng;
