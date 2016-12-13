@@ -242,7 +242,7 @@ void TemplateMatchingStep::execute(void* data){
     cout << "left " << wClipLeft << " right " << wClipRight << endl;
     cellPlot.create(800, 1000, CV_8UC3);
 
-    MatchResult matchResults[6][2][10];
+    MatchResult matchResults[12][2][10];
     for (int type = 0; type < 2; type++) {
         for (int digit = 0; digit < 10; digit++) {
 
@@ -266,13 +266,20 @@ void TemplateMatchingStep::execute(void* data){
                 }
             }
 
-
-            for (int pos = 0; pos < 6; pos++) {
+            int totalPos = type==1 ? 6 : 12;
+            for (int pos = 0; pos < totalPos; pos++) {
 
 
                 MatchResult &matchResult = matchResults[pos][type][digit];
 
                 double o = 3*w + pos*7*w;
+                int codeType;
+                if (pos < 6) {
+                    codeType = type;
+                } else {
+                    o += 5*w;
+                    codeType = 2;
+                }
                 int omin = o-deltaO;
                 int omax = ceil(o+deltaO);
                 double oClipTop = o+deltaO-(int)(o+deltaO);
@@ -283,7 +290,7 @@ void TemplateMatchingStep::execute(void* data){
                     for (const auto &cell : leftRightClips[0]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, codeType, digit, lowDists, highDists);
                         }
                     }
                 } else if (wmin == wmax-1) {
@@ -291,14 +298,14 @@ void TemplateMatchingStep::execute(void* data){
                     for (const auto &cell : leftRightClips[0]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmin, omax-1, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omax-1, codeType, digit, lowDists, highDists);
                         }
                         newCell = cell;
                         if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, codeType, digit, lowDists, highDists);
                         }
                         for (int io = omin+1; io < omax-1; io++) {
-                            matchResult += calcIntegralsOverCell(cell, wmin, io, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(cell, wmin, io, codeType, digit, lowDists, highDists);
                         }
                     }
                 } else if (omin == omax-1) {
@@ -306,20 +313,20 @@ void TemplateMatchingStep::execute(void* data){
                     for (const auto &cell : leftRightClips[0]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, codeType, digit, lowDists, highDists);
                         }
                     }
                     for (const auto &cell : leftRightClips[1]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omin, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omin, codeType, digit, lowDists, highDists);
                         }
                     }
                     for (const auto &cell : cellsPerDigit[type][digit]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
                             for (int iw = wmin+1; iw < wmax-1; iw++) {
-                                matchResult += calcIntegralsOverCell(newCell, iw, omin, type, digit, lowDists, highDists);
+                                matchResult += calcIntegralsOverCell(newCell, iw, omin, codeType, digit, lowDists, highDists);
                             }
                         }
                     }
@@ -328,45 +335,45 @@ void TemplateMatchingStep::execute(void* data){
                     for (const auto &cell : leftRightClips[0]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmin, omax-1, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omax-1, codeType, digit, lowDists, highDists);
                         }
                         newCell = cell;
                         if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, codeType, digit, lowDists, highDists);
                         }
                         for (int io = omin+1; io < omax-1; io++) {
-                            matchResult += calcIntegralsOverCell(cell, wmin, io, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(cell, wmin, io, codeType, digit, lowDists, highDists);
                         }
                     }
                     for (const auto &cell : leftRightClips[1]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omax-1, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omax-1, codeType, digit, lowDists, highDists);
                         }
                         newCell = cell;
                         if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
-                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omin, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omin, codeType, digit, lowDists, highDists);
                         }
                         for (int io = omin+1; io < omax-1; io++) {
-                            matchResult += calcIntegralsOverCell(cell, wmax-1, io, type, digit, lowDists, highDists);
+                            matchResult += calcIntegralsOverCell(cell, wmax-1, io, codeType, digit, lowDists, highDists);
                         }
                     }
                     for (const auto &cell : cellsPerDigit[type][digit]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP)) {
                             for (int iw = wmin+1; iw < wmax-1; iw++) {
-                                matchResult += calcIntegralsOverCell(newCell, iw, omax-1, type, digit, lowDists, highDists);
+                                matchResult += calcIntegralsOverCell(newCell, iw, omax-1, codeType, digit, lowDists, highDists);
                             }
                         }
                         newCell = cell;
                         if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
                             for (int iw = wmin+1; iw < wmax-1; iw++) {
-                                matchResult += calcIntegralsOverCell(newCell, iw, omin, type, digit, lowDists, highDists);
+                                matchResult += calcIntegralsOverCell(newCell, iw, omin, codeType, digit, lowDists, highDists);
                             }
                         }
                         for (int iw = wmin+1; iw < wmax-1; iw++) {
                             for (int io = omin+1; io < omax-1; io++) {
-                                matchResult += calcIntegralsOverCell(cell, iw, io, type, digit, lowDists, highDists);
+                                matchResult += calcIntegralsOverCell(cell, iw, io, codeType, digit, lowDists, highDists);
                             }
                         }
                     }
@@ -380,8 +387,9 @@ void TemplateMatchingStep::execute(void* data){
         } // for digit
     } // for type
 
-    for (int pos = 0; pos < 6; pos++) {
-        for (int type = 0; type < 2; type++) {
+    for (int pos = 0; pos < 12; pos++) {
+        int endType = pos<6 ? 2 : 1;
+        for (int type = 0; type < endType; type++) {
             for (int digit = 0; digit < 10; digit++) {
                 cout << pos << " " << type << " " << digit << " " << matchResults[pos][type][digit] << endl;
             }
@@ -389,27 +397,32 @@ void TemplateMatchingStep::execute(void* data){
         cout << endl;
     }
 
-    double cost[6][2][10];
-    int minTypes[5][2][10];
-    int minDigits[5][2][10];
+    double cost[12][2][10];
+    int minTypes[11][2][10];
+    int minDigits[11][2][10];
     for (int type = 0; type < 2; type++) {
         for (int digit = 0; digit < 10; digit++) {
             cost[0][type][digit] = -log(matchResults[0][type][digit].likelihood);
         }
     }
-    for (int pos = 1; pos < 6; pos++) {
-        for (int type = 0; type < 2; type++) {
+    for (int pos = 1; pos < 12; pos++) {
+        int endType = pos<6 ? 2 : 1;
+        for (int type = 0; type < endType; type++) {
             for (int digit = 0; digit < 10; digit++) {
 
                 const MatchResult &mr = matchResults[pos][type][digit];
                 double minCost = numeric_limits<double>::max();
                 int minType, minDigit;
-
-                for (int type2 = 0; type2 < 2; type2++) {
+                int endType2 = pos<7 ? 2 : 1;
+                for (int type2 = 0; type2 < endType2; type2++) {
                     for (int digit2 = 0; digit2 < 10; digit2++) {
                         const MatchResult &mr2 = matchResults[pos-1][type2][digit2];
-                        double thisCost = cost[pos-1][type2][digit2];
-                        thisCost += alpha*pow(mr2.woEstimate.y + 7*mr2.woEstimate.x - mr.woEstimate.y, 2) - log(mr.likelihood);
+                        double thisCost = cost[pos-1][type2][digit2] - log(mr.likelihood);
+                        if (pos == 6) {
+                            thisCost += alpha*pow(mr2.woEstimate.y + 12*mr2.woEstimate.x - mr.woEstimate.y, 2);
+                        } else {
+                            thisCost += alpha*pow(mr2.woEstimate.y + 7*mr2.woEstimate.x - mr.woEstimate.y, 2);
+                        }
                         if (thisCost < minCost) {
                             minCost = thisCost;
                             minType = type2;
@@ -426,26 +439,24 @@ void TemplateMatchingStep::execute(void* data){
     }
 
     double minCost = numeric_limits<double>::max();
-    int minType, minDigit;
-    for (int type = 0; type < 2; type++) {
-        for (int digit = 0; digit < 10; digit++) {
-            if (cost[5][type][digit] < minCost) {
-                minCost = cost[5][type][digit];
-                minType = type;
-                minDigit = digit;
-            }
+    int minDigit;
+    for (int digit = 0; digit < 10; digit++) {
+        if (cost[11][0][digit] < minCost) {
+            minCost = cost[11][0][digit];
+            minDigit = digit;
         }
     }
 
-    int barcode[7];
-    int types[6];
-    barcode[6] = minDigit;
-    types[5] = minType;
-    for (int pos = 4; pos >= 0; pos--) {
+    int barcode[13];
+    int types[12];
+    barcode[12] = minDigit;
+    types[11] = 0;
+    for (int pos = 10; pos >= 0; pos--) {
         barcode[pos+1] = minDigits[pos][types[pos+1]][barcode[pos+2]];
         types[pos] = minTypes[pos][types[pos+1]][barcode[pos+2]];
     }
 
+    barcode[0] = -1;
     for (int firstDigit = 0; firstDigit < 10; firstDigit++) {
         bool found = true;
         for (int i = 0; i < 6; i++) {
@@ -459,10 +470,13 @@ void TemplateMatchingStep::execute(void* data){
             break;
         }
     }
-
     QString *result = new QString();
-    for (int i = 0; i < 7; i++) {
-        *result += QString::number(barcode[i]);
+    if (barcode[0] == -1) {
+        *result = "firstDigitPattern invalid";
+    } else {
+        for (int i = 0; i < 13; i++) {
+            *result += QString::number(barcode[i]);
+        }
     }
     emit completed((void*)result);
 }
@@ -475,17 +489,18 @@ MatchResult TemplateMatchingStep::calcIntegralsOverCell(const Cell &cell, int iw
     double cost = 0;
     int offset = io;
     int totalPixInBar = iw + cell.pixelsPerBar[0];
+    int parity = type==2 ? -1 : 1;
     for (int ibar = 0; ibar < totalPixInBar; ibar++) {
-        cost += lowDists[offset-ibar];
+        cost += parity==1 ? lowDists[offset-ibar] : highDists[offset-ibar];
     }
 
     offset++;
-    int parity = 1;
+
     for (int bar = 0; bar < 4; bar++) {
-        if (type == 0) {
-            totalPixInBar = iw*patterns[digit][bar] + cell.pixelsPerBar[1+bar];
-        } else {
+        if (type == 1) {
             totalPixInBar = iw*patterns[digit][3-bar] + cell.pixelsPerBar[1+bar];
+        } else {
+            totalPixInBar = iw*patterns[digit][bar] + cell.pixelsPerBar[1+bar];
         }
         for (int ibar = 0; ibar < totalPixInBar; ibar++) {
             cost += parity==1 ? highDists[offset+ibar] : lowDists[offset+ibar];
