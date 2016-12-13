@@ -15,8 +15,6 @@ class Step : public QObject
 public:
     Step();
 public slots:
-    //virtual void execute(QString data);
-    //virtual void execute(cv::Mat data);
     virtual void execute(void *data);
 
 signals:

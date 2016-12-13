@@ -16,12 +16,13 @@ win32 {
 
     QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
 
-    INCLUDEPATH += C:/openCV/include
+    INCLUDEPATH += C:/openCV31/include
 
-    LIBS += -LC:/openCV/bin \
-            -lopencv_core2413 \
-            -lopencv_highgui2413 \
-            -lopencv_imgproc2413
+    LIBS += -LC:/openCV31/bin \
+            -lopencv_core310 \
+            -lopencv_highgui310 \
+            -lopencv_imgproc310 \
+            -lopencv_imgcodecs310
 
     QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
 }
