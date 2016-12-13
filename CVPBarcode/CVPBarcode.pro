@@ -10,11 +10,12 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = CVPBarcode
 TEMPLATE = app
+CONFIG += c++14
 
 win32 {
     # Windows Compiler Flags
 
-    QMAKE_CXXFLAGS += -std=c++11 -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
 
     INCLUDEPATH += C:/openCV/include
 
@@ -28,7 +29,7 @@ win32 {
 
 unix {
 
-    QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -Wno-unknown-pragmas
 
     LIBS += -lopencv_core \
             -lopencv_highgui \

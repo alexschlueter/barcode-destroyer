@@ -5,6 +5,7 @@
 #include <QDebug>
 
 #include <iostream>
+#include <memory>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -12,6 +13,93 @@
 
 using namespace std;
 using namespace cv;
+
+double Cell::orientedDistanceToClipLine(const Point2d &point, double clipCoord, ClipDirection dir) {
+    switch (dir) {
+    case ClipDirection::LEFT:
+        return point.x - clipCoord;
+    case ClipDirection::RIGHT:
+        return clipCoord - point.x;
+    case ClipDirection::TOP:
+        return clipCoord - point.y;
+    case ClipDirection::BOTTOM:
+        return point.y - clipCoord;
+    }
+    return 0;
+}
+
+Point2d Cell::clipLineIntersection(const Point2d &p1, const Point2d &p2, double clipCoord, ClipDirection dir)
+{
+    double t, newCoord;
+    switch (dir) {
+    case ClipDirection::LEFT: case ClipDirection::RIGHT:
+        t = (clipCoord - p2.x) / (p1.x - p2.x);
+        newCoord = p2.y + t*(p1.y - p2.y);
+        return {clipCoord, newCoord};
+
+    case ClipDirection::TOP: case ClipDirection::BOTTOM:
+        t = (clipCoord - p2.y) / (p1.y - p2.y);
+        newCoord = p2.x + t*(p1.x - p2.x);
+        return {newCoord, clipCoord};
+    }
+    return {0, 0};
+}
+
+bool Cell::clip(double clipCoord, ClipDirection dir)
+{
+    const double eps = 1e-9;
+    vector<Point2d> newVerts;
+
+    for (size_t i = 0; i < vertices.size(); i++) {
+        auto p1 = vertices[i];
+        auto p2 = vertices[(i+1)%vertices.size()];
+
+        double oldDist = orientedDistanceToClipLine(p1, clipCoord, dir);
+        double newDist = orientedDistanceToClipLine(p2, clipCoord, dir);
+
+        if (oldDist * newDist < 0) {
+            // we crossed the clip line
+            // but do we need to add a vertex?
+            if ((newDist < 0 && oldDist > eps) || newDist > eps) {
+                // yes we do
+                newVerts.push_back(clipLineIntersection(p1, p2, clipCoord, dir));
+            }
+        }
+        if (newDist >= 0) {
+            newVerts.push_back(p2);
+        }
+    }
+
+    int nv = newVerts.size();
+    if (nv < 3) return false;
+    vertices = move(newVerts);
+
+    area = 0;
+    centroid = {0, 0};
+    for (int i = 0; i < nv; i++) {
+        Point2d &p1 = vertices[i];
+        Point2d &p2 = vertices[(i+1)%nv];
+        area += p1.x*p2.y - p1.y*p2.x;
+        centroid.x += (p1.x+p2.x) * (p1.x*p2.y - p2.x*p1.y);
+        centroid.y += (p1.y+p2.y) * (p1.x*p2.y - p2.x*p1.y);
+    }
+    area /= 2;
+    centroid /= 6*area;
+
+    return true;
+}
+
+void Cell::draw(Mat &img, int offsetX, int offsetY, RNG &rng, float scaleX=400, float scaleY=100) const
+{
+    Scalar color(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+    auto shiftedVerts = std::make_unique<Point[]>(vertices.size());
+    for (size_t i = 0; i < vertices.size(); i++) {
+        shiftedVerts[i].x = scaleX*(offsetX + vertices[i].x);
+        shiftedVerts[i].y = img.rows - scaleY*(offsetY + vertices[i].y);
+        //cout << img.rows << " " << shiftedVerts[i] << endl;
+    }
+    fillConvexPoly(img, shiftedVerts.get(), vertices.size(), color);
+}
 
 const int TemplateMatchingStep::patterns[][4] = {
        {3, 2, 1, 1},
@@ -26,34 +114,47 @@ const int TemplateMatchingStep::patterns[][4] = {
        {3, 1, 1, 2}
 };
 
-TemplateMatchingStep::TemplateMatchingStep(QString cellpath)
+TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 {
-    QDirIterator it(cellpath);
-    while (it.hasNext()) {
-        QString filep = it.next();
-        if (filep.right(4).toLower() == ".dat") {
-            QFile file(filep);
-            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                throw "TemplateMatchingStep: Could not open cell files";
-            }
-            int digit = filep.mid(filep.length()-5, 1).toInt();
-            QTextStream in(&file);
-            in.readLine();
-            while (! in.atEnd()) {
-                QStringList parts = in.readLine().split(",");
-                double area = parts[1].toDouble();
-                Point2d centroid(parts[2].toDouble(), parts[3].toDouble());
-                int pixelsPerSection[6];
-                for (int i = 0; i < 6; i++)
-                    pixelsPerSection[i] = parts[4+i].toInt();
-                cellsPerDigit[digit].push_back(Cell(area, centroid, pixelsPerSection));
-            }
-        }
+    QDirIterator itA(cellpath + "/A"), itB(cellpath + "/B");
+    QDirIterator *it;
+    for (int type = 0; type < 2; type++) {
+        if (type == 0) it = &itA;
+        else it = &itB;
 
+        while (it->hasNext()) {
+            QString filep = it->next();
+            if (filep.right(4).toLower() == ".dat") {
+                QFile file(filep);
+                if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                    throw "TemplateMatchingStep: Could not open cell file";
+                }
+                int digit = filep.mid(filep.length()-5, 1).toInt();
+                QTextStream in(&file);
+                in.readLine();
+                while (! in.atEnd()) {
+                    QStringList parts = in.readLine().split(",");
+                    double area = parts[1].toDouble();
+                    Point2d centroid(parts[2].toDouble(), parts[3].toDouble());
+                    int pixelsPerSection[6];
+                    for (int i = 0; i < 6; i++)
+                        pixelsPerSection[i] = parts[4+i].toInt();
+                    vector<Point2d> vertices((parts.size()-10)/2);
+                    for (int i = 0; i < (parts.size()-10)/2; i++) {
+                        vertices[i] = Point2d(parts[10+2*i].toDouble(), parts[10+2*i+1].toDouble());
+                    }
+                    cellsPerDigit[type][digit].push_back(Cell(area, centroid, pixelsPerSection, move(vertices)));
+                }
+            }
+
+        }
     }
-    for (int i = 0; i < 10; i++) {
-        for (const Cell &cell : cellsPerDigit[i]) {
-            cout << cell << endl;
+    for (int type = 0; type < 2; type++) {
+        cout << endl << "type " << type << endl;
+        for (int i = 0; i < 10; i++) {
+            for (const Cell &cell : cellsPerDigit[type][i]) {
+                cout << cell << endl;
+            }
         }
     }
 }
@@ -104,94 +205,272 @@ void TemplateMatchingStep::execute(void* data){
     cout << lowMean << " " << lowVar << " " << highMean << " " << highVar << " " << var << endl << endl;
 
     Mat plot(600, 800, CV_8UC3);
-    for (int i = 1; i < lowDists.size(); i++) {
+    for (unsigned int i = 1; i < lowDists.size(); i++) {
         cout << lowDists[i] << " ";
         line(plot, {2*i, (int)(200-lowDists[i-1]*2000)}, {2*(i+1), (int)(200-lowDists[i]*2000)}, {0, 255, 0});
     }
     cout << endl << endl;
-    for (int i = 1; i < highDists.size(); i++) {
+    for (unsigned int i = 1; i < highDists.size(); i++) {
         cout << highDists[i] << " ";
         line(plot, {2*i, (int)(500-highDists[i-1]*2000)}, {2*(i+1), (int)(500-highDists[i]*2000)}, {0, 0, 255});
     }
     cout << endl << endl << endl;
     imshow("plot", plot);
 
-    float deltaO = 2*w;
-    float deltaW = 2*deltaO/95;
+    double deltaO = 2*w;
+    double deltaW = 2*deltaO/95;
 
     int wmin = w-deltaW;
-    int wmax = w+deltaW+0.5;
+    int wmax = ceil(w+deltaW);
+    double wClipLeft = w-deltaW-wmin;
+    double wClipRight = w+deltaW-(int)(w+deltaW);
+    double punif = 1 / (4*deltaO*deltaW);
 
+    cout << "left " << wClipLeft << " right " << wClipRight << endl;
+    cellPlot.create(800, 1000, CV_8UC3);
 
-    double probabilities[6][10];
-    for (int digit = 0; digit < 10; digit++) {
-        std::vector<Cell> leftBound, rightBound;
-        if (w-delta)
-        for (const auto &cell : cellsPerDigit[digit]) {
+    MatchResult matchResults[6][2][10];
+    for (int type = 0; type < 2; type++) {
+        for (int digit = 0; digit < 10; digit++) {
 
-        }
-        for (int pos = 0; pos < 6; pos++) {
-
-
-            probabilities[pos][digit] = 0;
-
-            float o = 3*w + pos*7*w;
-            int omin = o-deltaO;
-            int omax = o+deltaO+0.5;
-
-            /*double distSum = 0;
-            int parity = 1;
-            int offset = ceil(o);
-            for (int bar = 0; bar < 4; bar++) {
-                int totalPixInBar = floor(w*patterns[digit][bar]);
-                //cout << "bar " << bar << " pix " << totalPixInBar << endl;
-                for (int ibar = 0; ibar < totalPixInBar; ibar++) {
-                    //cout << distSum << " " << parity << " " << offset << " " << bar << " " << totalPixInBar << " " << ibar << endl;
-                    distSum += parity==1 ? highDists[offset+ibar] : lowDists[offset+ibar];
+            vector<Cell> leftRightClips[2];
+            if (wmin == wmax-1) {
+                for (const auto &cell : cellsPerDigit[type][digit]) {
+                    Cell newCell(cell);
+                    if (newCell.clip(wClipLeft, ClipDirection::LEFT) && newCell.clip(wClipRight, ClipDirection::RIGHT)) {
+                        leftRightClips[0].push_back(move(newCell));
+                    }
                 }
-                offset += totalPixInBar;
-                parity *= -1;
-            }
-            probabilities[pos][digit] = exp(-distSum);*/
-
-            for (int iw = wmin; iw < wmax; iw++) {
-                for (int io = omin; io < omax; io++) {
-                    //if (w-deltaW <= iw && o-deltaO <= io && w+deltaW >= iw+1 && o+deltaO >= io+1) {
-                    if (true) {
-                        for (const Cell &cell : cellsPerDigit[digit]) {
-                            double distSum = 0;
-                            int offset = io;
-                            int totalPixInBar = iw + cell.pixelsPerBar[0];
-                            for (int ibar = 0; ibar < totalPixInBar; ibar++) {
-                                distSum += lowDists[offset-ibar];
-                            }
-
-                            offset++;
-                            int parity = 1;
-                            for (int bar = 0; bar < 4; bar++) {
-                                totalPixInBar = iw*patterns[digit][bar] + cell.pixelsPerBar[1+bar];
-                                for (int ibar = 0; ibar < totalPixInBar; ibar++) {
-                                    distSum += parity==1 ? highDists[offset+ibar] : lowDists[offset+ibar];
-                                }
-                                offset += totalPixInBar;
-                                parity *= -1;
-                            }
-
-                            totalPixInBar = iw + cell.pixelsPerBar[5];
-                            for (int ibar = 0; ibar < totalPixInBar; ibar++) {
-                                distSum += parity==1 ? highDists[offset+ibar] : lowDists[offset+ibar];
-                            }
-                            probabilities[pos][digit] += exp(-distSum)*cell.area;
-                        }
+            } else {
+                for (const auto &cell : cellsPerDigit[type][digit]) {
+                    Cell newCellLeft(cell), newCellRight(cell);
+                    if (newCellLeft.clip(wClipLeft, ClipDirection::LEFT)) {
+                        leftRightClips[0].push_back(move(newCellLeft));
+                    }
+                    if (newCellRight.clip(wClipRight, ClipDirection::RIGHT)) {
+                        leftRightClips[1].push_back(move(newCellRight));
                     }
                 }
             }
-            cout << pos << " " << digit << " " << probabilities[pos][digit] << endl;
+
+
+            for (int pos = 0; pos < 6; pos++) {
+
+
+                MatchResult &matchResult = matchResults[pos][type][digit];
+
+                double o = 3*w + pos*7*w;
+                int omin = o-deltaO;
+                int omax = ceil(o+deltaO);
+                double oClipTop = o+deltaO-(int)(o+deltaO);
+                double oClipBottom = o-deltaO-omin;
+
+                if (wmin == wmax-1 && omin == omax-1) {
+                    cout << "one section" << endl;
+                    for (const auto &cell : leftRightClips[0]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                        }
+                    }
+                } else if (wmin == wmax-1) {
+                    cout << "w small" << endl;
+                    for (const auto &cell : leftRightClips[0]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omax-1, type, digit, lowDists, highDists);
+                        }
+                        newCell = cell;
+                        if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                        }
+                        for (int io = omin+1; io < omax-1; io++) {
+                            matchResult += calcIntegralsOverCell(cell, wmin, io, type, digit, lowDists, highDists);
+                        }
+                    }
+                } else if (omin == omax-1) {
+                    cout << "o small" << endl;
+                    for (const auto &cell : leftRightClips[0]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                        }
+                    }
+                    for (const auto &cell : leftRightClips[1]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omin, type, digit, lowDists, highDists);
+                        }
+                    }
+                    for (const auto &cell : cellsPerDigit[type][digit]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            for (int iw = wmin+1; iw < wmax-1; iw++) {
+                                matchResult += calcIntegralsOverCell(newCell, iw, omin, type, digit, lowDists, highDists);
+                            }
+                        }
+                    }
+                } else {
+                    cout << "full" << endl;
+                    for (const auto &cell : leftRightClips[0]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omax-1, type, digit, lowDists, highDists);
+                        }
+                        newCell = cell;
+                        if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmin, omin, type, digit, lowDists, highDists);
+                        }
+                        for (int io = omin+1; io < omax-1; io++) {
+                            matchResult += calcIntegralsOverCell(cell, wmin, io, type, digit, lowDists, highDists);
+                        }
+                    }
+                    for (const auto &cell : leftRightClips[1]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omax-1, type, digit, lowDists, highDists);
+                        }
+                        newCell = cell;
+                        if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            matchResult += calcIntegralsOverCell(newCell, wmax-1, omin, type, digit, lowDists, highDists);
+                        }
+                        for (int io = omin+1; io < omax-1; io++) {
+                            matchResult += calcIntegralsOverCell(cell, wmax-1, io, type, digit, lowDists, highDists);
+                        }
+                    }
+                    for (const auto &cell : cellsPerDigit[type][digit]) {
+                        Cell newCell(cell);
+                        if (newCell.clip(oClipTop, ClipDirection::TOP)) {
+                            for (int iw = wmin+1; iw < wmax-1; iw++) {
+                                matchResult += calcIntegralsOverCell(newCell, iw, omax-1, type, digit, lowDists, highDists);
+                            }
+                        }
+                        newCell = cell;
+                        if (newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
+                            for (int iw = wmin+1; iw < wmax-1; iw++) {
+                                matchResult += calcIntegralsOverCell(newCell, iw, omin, type, digit, lowDists, highDists);
+                            }
+                        }
+                        for (int iw = wmin+1; iw < wmax-1; iw++) {
+                            for (int io = omin+1; io < omax-1; io++) {
+                                matchResult += calcIntegralsOverCell(cell, iw, io, type, digit, lowDists, highDists);
+                            }
+                        }
+                    }
+                } // if boundary conditions
+
+                matchResult.woEstimate /= matchResult.likelihood;
+
+                //imshow("cell plot", cellPlot);
+                //cin.ignore();
+            } // for pos
+        } // for digit
+    } // for type
+
+    for (int pos = 0; pos < 6; pos++) {
+        for (int type = 0; type < 2; type++) {
+            for (int digit = 0; digit < 10; digit++) {
+                cout << pos << " " << type << " " << digit << " " << matchResults[pos][type][digit] << endl;
+            }
         }
         cout << endl;
     }
 
-    //TODO read the Barcode
-    QString result = "1234567890123";
-    emit completed((void*)&result);
+    double cost[6][2][10];
+    int minTypes[5][2][10];
+    int minDigits[5][2][10];
+    for (int type = 0; type < 2; type++) {
+        for (int digit = 0; digit < 10; digit++) {
+            cost[0][type][digit] = -log(matchResults[0][type][digit].likelihood);
+        }
+    }
+    for (int pos = 1; pos < 6; pos++) {
+        for (int type = 0; type < 2; type++) {
+            for (int digit = 0; digit < 10; digit++) {
+
+                const MatchResult &mr = matchResults[pos][type][digit];
+                double minCost = numeric_limits<double>::max();
+                int minType, minDigit;
+
+                for (int type2 = 0; type2 < 2; type2++) {
+                    for (int digit2 = 0; digit2 < 10; digit2++) {
+                        const MatchResult &mr2 = matchResults[pos-1][type2][digit2];
+                        double thisCost = cost[pos-1][type2][digit2];
+                        thisCost += alpha*pow(mr2.woEstimate.y + 7*mr2.woEstimate.x - mr.woEstimate.y, 2) - log(mr.likelihood);
+                        if (thisCost < minCost) {
+                            minCost = thisCost;
+                            minType = type2;
+                            minDigit = digit2;
+                        }
+                    }
+                }
+
+                cost[pos][type][digit] = minCost;
+                minTypes[pos-1][type][digit] = minType;
+                minDigits[pos-1][type][digit] = minDigit;
+            }
+        }
+    }
+
+    double minCost = numeric_limits<double>::max();
+    int minType, minDigit;
+    for (int type = 0; type < 2; type++) {
+        for (int digit = 0; digit < 10; digit++) {
+            if (cost[5][type][digit] < minCost) {
+                minCost = cost[5][type][digit];
+                minType = type;
+                minDigit = digit;
+            }
+        }
+    }
+
+    int barcode[6];
+    int types[6];
+    barcode[5] = minDigit;
+    types[5] = minType;
+    for (int pos = 4; pos >= 0; pos--) {
+        barcode[pos] = minDigits[pos][types[pos+1]][barcode[pos+1]];
+        types[pos] = minTypes[pos][types[pos+1]][barcode[pos+1]];
+    }
+
+    QString *result = new QString();
+    for (int i = 0; i < 6; i++) {
+        *result += QString::number(barcode[i]);
+    }
+    emit completed((void*)result);
+}
+
+MatchResult TemplateMatchingStep::calcIntegralsOverCell(const Cell &cell, int iw, int io, int type, int digit, const std::vector<double> &lowDists,
+                                                 const std::vector<double> &highDists)
+{
+    //cout << "calc " << digit << " " << iw << " " << io << endl << cell << endl << endl;
+    //cell.draw(cellPlot, iw, io, rng);
+    double cost = 0;
+    int offset = io;
+    int totalPixInBar = iw + cell.pixelsPerBar[0];
+    for (int ibar = 0; ibar < totalPixInBar; ibar++) {
+        cost += lowDists[offset-ibar];
+    }
+
+    offset++;
+    int parity = 1;
+    for (int bar = 0; bar < 4; bar++) {
+        if (type == 0) {
+            totalPixInBar = iw*patterns[digit][bar] + cell.pixelsPerBar[1+bar];
+        } else {
+            totalPixInBar = iw*patterns[digit][3-bar] + cell.pixelsPerBar[1+bar];
+        }
+        for (int ibar = 0; ibar < totalPixInBar; ibar++) {
+            cost += parity==1 ? highDists[offset+ibar] : lowDists[offset+ibar];
+        }
+        offset += totalPixInBar;
+        parity *= -1;
+    }
+
+    totalPixInBar = iw + cell.pixelsPerBar[5];
+    for (int ibar = 0; ibar < totalPixInBar; ibar++) {
+        cost += parity==1 ? highDists[offset+ibar] : lowDists[offset+ibar];
+    }
+
+    return MatchResult(exp(-cost)*cell.area, exp(-cost)*(Point2d(iw, io)+cell.centroid)*cell.area);
 }
