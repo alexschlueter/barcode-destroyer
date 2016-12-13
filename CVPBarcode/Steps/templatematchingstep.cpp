@@ -174,9 +174,45 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 
 void TemplateMatchingStep::execute(void* data){
     LSDResult *lsdres = static_cast<LSDResult*>(data);
+    Point perp(lsdres->leftBnd.y - lsdres->rightBnd.y, lsdres->rightBnd.x - lsdres->leftBnd.x);
+    perp *= lsdres->height / (2*norm(perp));
+    Mat vis = lsdres->img.clone();
 
-    LineIterator scanIt(lsdres->img, lsdres->leftBnd, lsdres->rightBnd, 8, true);
+    int barcode[13];
+    QString *result = new QString();
+    int totalSteps = numLines / 2 + 1;
+    for (int line = 0; line < numLines; line++) {
+        int dir = line%2 ? 1 : -1;
+        float offset = ((line+1) / 2) / (float)totalSteps;
+        cout << "scan line " << line << " " << dir << " " << offset << endl;
+        circle(vis, lsdres->leftBnd+dir*offset*perp, 3, {0, 255, 0});
+        circle(vis, lsdres->rightBnd+dir*offset*perp, 3, {0, 0, 255});
+        // TODO: bounds checking
+        for (int orientation = 0; orientation < 2; orientation++) {
+            unique_ptr<LineIterator> scanIt;
+            if (orientation) {
+                scanIt = make_unique<LineIterator>(lsdres->img, lsdres->leftBnd+dir*offset*perp, lsdres->rightBnd+dir*offset*perp);
+            } else {
+                scanIt = make_unique<LineIterator>(lsdres->img, lsdres->rightBnd+dir*offset*perp, lsdres->leftBnd+dir*offset*perp);
+            }
+            if (readBarcodeFromLine(*scanIt, barcode)) {
+                for (int i = 0; i < 13; i++) {
+                    *result += QString::number(barcode[i]);
+                }
+                emit completed((void*)result);
+                imshow("scanlines", vis);
+                return;
+            }
+        }
+    }
+    imshow("scanlines", vis);
+    *result = "fail";
+    emit completed((void*)result);
+}
+
+bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode[]) {
     vector<uchar> scan(scanIt.count);
+    LineIterator scanIt2 = scanIt;
 
     for (int i = 0; i < scanIt.count; i++, ++scanIt) {
         scan[i] = **scanIt;
@@ -184,13 +220,10 @@ void TemplateMatchingStep::execute(void* data){
     std::sort(scan.begin(), scan.end());
     double lowMean = 0, highMean = 0, lowVar = 0, highVar = 0, var = 0;
     for (int i = 0; i < scanIt.count/2; i++) {
-        cout << (int)scan[i] << " ";
         lowMean += scan[i];
         lowVar += scan[i]*scan[i];
         var += scan[i]*scan[i];
     }
-    cout << endl << endl;
-
 
     for (int i = scanIt.count / 2; i < scanIt.count; i++) {
         cout << (int)scan[i] << " ";
@@ -198,7 +231,7 @@ void TemplateMatchingStep::execute(void* data){
         highVar += scan[i]*scan[i];
         var += scan[i]*scan[i];
     }
-    cout << endl << endl;
+
     var = var/scanIt.count-pow((lowMean+highMean)/scanIt.count, 2);
     lowMean /= scanIt.count/2;
     lowVar = lowVar*2/scanIt.count - lowMean*lowMean;
@@ -209,26 +242,13 @@ void TemplateMatchingStep::execute(void* data){
     double w = scanIt.count / 95.0;
     cout << "w = " << w << endl;
     vector<double> lowDists(scanIt.count), highDists(scanIt.count);
-    scanIt = LineIterator(lsdres->img, lsdres->leftBnd, lsdres->rightBnd, 8, true);
-    for (int i = 0; i < scanIt.count; i++, ++scanIt) {
-        lowDists[i] = pow(max(**scanIt-lowMean, 0.0), 2)/(2*var);
-        highDists[i] = pow(min(**scanIt-highMean, 0.0), 2)/(2*var);
+
+    for (int i = 0; i < scanIt2.count; i++, ++scanIt2) {
+        lowDists[i] = pow(max(**scanIt2-lowMean, 0.0), 2)/(2*var);
+        highDists[i] = pow(min(**scanIt2-highMean, 0.0), 2)/(2*var);
     }
 
     cout << lowMean << " " << lowVar << " " << highMean << " " << highVar << " " << var << endl << endl;
-
-    Mat plot(600, 800, CV_8UC3);
-    for (unsigned int i = 1; i < lowDists.size(); i++) {
-        cout << lowDists[i] << " ";
-        line(plot, {2*i, (int)(200-lowDists[i-1]*2000)}, {2*(i+1), (int)(200-lowDists[i]*2000)}, {0, 255, 0});
-    }
-    cout << endl << endl;
-    for (unsigned int i = 1; i < highDists.size(); i++) {
-        cout << highDists[i] << " ";
-        line(plot, {2*i, (int)(500-highDists[i-1]*2000)}, {2*(i+1), (int)(500-highDists[i]*2000)}, {0, 0, 255});
-    }
-    cout << endl << endl << endl;
-    imshow("plot", plot);
 
     double deltaO = 2*w;
     double deltaW = 2*deltaO/95;
@@ -237,9 +257,8 @@ void TemplateMatchingStep::execute(void* data){
     int wmax = ceil(w+deltaW);
     double wClipLeft = w-deltaW-wmin;
     double wClipRight = w+deltaW-(int)(w+deltaW);
-    double punif = 1 / (4*deltaO*deltaW);
 
-    cout << "left " << wClipLeft << " right " << wClipRight << endl;
+    cout << "wClipLeft " << wClipLeft << " wClipRight " << wClipRight << endl;
     cellPlot.create(800, 1000, CV_8UC3);
 
     MatchResult matchResults[12][2][10];
@@ -248,6 +267,7 @@ void TemplateMatchingStep::execute(void* data){
 
             vector<Cell> leftRightClips[2];
             if (wmin == wmax-1) {
+                cout << "w small" << endl;
                 for (const auto &cell : cellsPerDigit[type][digit]) {
                     Cell newCell(cell);
                     if (newCell.clip(wClipLeft, ClipDirection::LEFT) && newCell.clip(wClipRight, ClipDirection::RIGHT)) {
@@ -294,7 +314,6 @@ void TemplateMatchingStep::execute(void* data){
                         }
                     }
                 } else if (wmin == wmax-1) {
-                    cout << "w small" << endl;
                     for (const auto &cell : leftRightClips[0]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP)) {
@@ -391,10 +410,10 @@ void TemplateMatchingStep::execute(void* data){
         int endType = pos<6 ? 2 : 1;
         for (int type = 0; type < endType; type++) {
             for (int digit = 0; digit < 10; digit++) {
-                cout << pos << " " << type << " " << digit << " " << matchResults[pos][type][digit] << endl;
+                //cout << pos << " " << type << " " << digit << " " << matchResults[pos][type][digit] << endl;
             }
         }
-        cout << endl;
+        //cout << endl;
     }
 
     double cost[12][2][10];
@@ -447,7 +466,6 @@ void TemplateMatchingStep::execute(void* data){
         }
     }
 
-    int barcode[13];
     int types[12];
     barcode[12] = minDigit;
     types[11] = 0;
@@ -470,15 +488,19 @@ void TemplateMatchingStep::execute(void* data){
             break;
         }
     }
-    QString *result = new QString();
-    if (barcode[0] == -1) {
-        *result = "firstDigitPattern invalid";
-    } else {
-        for (int i = 0; i < 13; i++) {
-            *result += QString::number(barcode[i]);
-        }
+
+    return barcode[0] != -1 && calcCheckDigit(barcode) == barcode[12];
+}
+
+int TemplateMatchingStep::calcCheckDigit(int barcode[])
+{
+    int res = 0;
+    for (int i = 0; i < 12; i++) {
+        res += (i%2 ? 3 : 1) * barcode[i];
     }
-    emit completed((void*)result);
+
+    if (res % 10 == 0) return 0;
+    else return 10 - (res % 10);
 }
 
 MatchResult TemplateMatchingStep::calcIntegralsOverCell(const Cell &cell, int iw, int io, int type, int digit, const std::vector<double> &lowDists,

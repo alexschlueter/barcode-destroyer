@@ -58,10 +58,15 @@ class TemplateMatchingStep : public Step
     Q_OBJECT
 public:
     TemplateMatchingStep(QString cellpath);
+    bool readBarcodeFromLine(cv::LineIterator &scanIt, int barcode[]);
+
+    static int calcCheckDigit(int barcode[12]);
 public slots:
     void execute(void* data);
+
 private:
     const double alpha = 0.1;
+    const int numLines = 7;
 
     static const int patterns[][4];
     static const int firstDigitPatterns[][6];

@@ -223,8 +223,13 @@ void LSDStep::execute(void *data){
     // vector q -> p
     Point2f vec = p - q;
     float length = norm(vec);
-    // direction perpendicular to the best line
-    Point2f lineDir = {-vec.y, vec.x};
+    // direction perpendicular to the best line, pointing to the right
+    Point2f lineDir;
+    if (vec.x > 0) {
+        lineDir = {-vec.y, vec.x};
+    } else {
+        lineDir = {vec.y, -vec.x};
+    }
     Point2f center = 0.5*(p+q);
 
     // calculate boundaries of the barcode in both directions
