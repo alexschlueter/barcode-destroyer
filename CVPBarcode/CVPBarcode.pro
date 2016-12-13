@@ -30,14 +30,14 @@ win32 {
 
 unix {
 
-    QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
 
     LIBS += -lopencv_core \
             -lopencv_highgui \
             -lopencv_imgproc \
             -lopencv_imgcodecs
 
-    QMAKE_CXXFLAGS_WARN_ON = -Wno-reorder
+    QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
 }
 
 HEADERS += \

@@ -252,14 +252,13 @@ bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode
 
     // TODO: tune parameters
     //double deltaO = 2*w;
-    double deltaO = 3*w;
+    double deltaO = 5*w; // TODO: bounds checking! scan line long enough?
     double deltaW = 2*deltaO/95;
 
     int wmin = w-deltaW;
     int wmax = ceil(w+deltaW);
     double wClipLeft = w-deltaW-wmin;
     double wClipRight = w+deltaW-(int)(w+deltaW);
-    // TODO: bounds checking
 
     cout << "wClipLeft " << wClipLeft << " wClipRight " << wClipRight << endl;
     cellPlot.create(800, 1000, CV_8UC3);
