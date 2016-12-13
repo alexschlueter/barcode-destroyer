@@ -458,13 +458,14 @@ bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode
     }
 
     double minCost = numeric_limits<double>::max();
-    int minDigit;
+    int minDigit = -1;
     for (int digit = 0; digit < 10; digit++) {
         if (cost[11][0][digit] < minCost) {
             minCost = cost[11][0][digit];
             minDigit = digit;
         }
     }
+    if (minDigit == -1) return false;
 
     int types[12];
     barcode[12] = minDigit;
