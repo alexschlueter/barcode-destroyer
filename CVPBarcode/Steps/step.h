@@ -12,8 +12,11 @@
 class Step : public QObject
 {
     Q_OBJECT
+
+protected:
+    bool visualize;
 public:
-    Step();
+    Step(bool _visualize=false);
 public slots:
     virtual void execute(void *data);
 

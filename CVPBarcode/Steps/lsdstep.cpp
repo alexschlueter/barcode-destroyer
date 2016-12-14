@@ -63,8 +63,7 @@ bool LSDStep::linesMaybeInSameBarcode(const Vec4f &line1, const Vec4f &line2)
  * @param dir direction from the start point to scan in
  * @return point with maximal variation difference (likely boundary of a barcode)
  */
-template <class LineIt>
-Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point2f &dir, LineIt linesBegin, LineIt linesEnd) {
+Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point2f &dir) {
 
     // need vector perpendicular to dir to scan multiple lines above and below the actual line
     Point2f perp = {-dir.y, dir.x};
@@ -77,8 +76,8 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
     LineIterator fullBisectIt(gray, start, start+longEnough*dir);
 
     int maxVar = std::numeric_limits<int>::min();
-    /*std::vector<int> vars;
-    vars.reserve(fullBisectIt.count);*/
+    std::vector<int> vars;
+    vars.reserve(fullBisectIt.count);
     Point2f maxPos;
     // create Rect of the same size as the image for simple bound checking with Rect::contains
     Rect imgRect(Point(), gray.size());
@@ -129,11 +128,11 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
             maxVar = variation;
             maxPos = fullBisectIt.pos();
         }
-        //vars.push_back(variation);
+        vars.push_back(variation);
     }
 
 
-    /*
+
     // experiment to choose the local maximum closest to start instead of the global maximum
     // problem: calibration of the 0.4/0.7 constants, sometimes box too small
     int firstMax, firstMaxIdx = -1;
@@ -155,40 +154,21 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
     // experiment to extend the boundary slightly as long as the variation difference doesn't drop too
     // low relative to the max
     // problem: calibration of 0.8, box too large in some cases
-    for (; (uint)firstMaxIdx < vars.size(); firstMaxIdx++) {
+    /*for (; (uint)firstMaxIdx < vars.size(); firstMaxIdx++) {
         if (vars[firstMaxIdx] < 0.8*firstMax) {
             firstMaxIdx--;
             break;
         }
     }
+    */
+
+
     fullBisectIt = LineIterator(gray, start, start+longEnough*dir);
     for (; firstMaxIdx > 0; firstMaxIdx--) ++fullBisectIt;
     return fullBisectIt.pos();
-    */
 
-    LineIt nextLine = find_if(linesBegin, linesEnd, [&](const auto &line) {
-        Point2f p(line[0], line[1]);
-        Point2f q(line[2], line[3]);
-        Point2f center = 0.5*(p+q);
 
-        return (center-start).dot(dir) > norm(maxPos-start)*norm(dir);
-    });
-    Point2f lastPos = maxPos;
-    float allowedDistance = 0.2*norm(maxPos-start); // TODO: tune 0.2 / estimate module width
-    for (; nextLine < linesEnd; ++nextLine) {
-        Point2f p((*nextLine)[0], (*nextLine)[1]);
-        Point2f q((*nextLine)[2], (*nextLine)[3]);
-        Point2f center = 0.5*(p+q);
-        if (norm(center-lastPos) < allowedDistance) {
-            cout << "lsd extend " << center << " " << lastPos << " " << allowedDistance << endl;
-            lastPos = center;
-        } else {
-            cout << "lsd extend break " << center << " " << lastPos << " " << allowedDistance << endl;
-            break;
-        }
-    }
-
-    return lastPos;
+    return maxPos;
 }
 
 void LSDStep::execute(void *data){
@@ -202,7 +182,7 @@ void LSDStep::execute(void *data){
     // show found line segments
     Mat detectedLines = gray.clone();
     lsd->drawSegments(detectedLines, lines);
-    imshow("lines detected by cv::LineSegmentDetector", detectedLines);
+    //imshow("lines detected by cv::LineSegmentDetector", detectedLines);
 
     // we're trying to find a line segment which lies approximately in the middle of the barcode
     // we assign points to each line based on how many other lines are approximately
@@ -287,8 +267,15 @@ void LSDStep::execute(void *data){
     });
 
     // calculate boundaries of the barcode in both directions
-    Point leftBoundary = maxVariationDifferenceAlongLine(center, -lineDir, lines.rbegin(), lines.rend());
-    Point rightBoundary = maxVariationDifferenceAlongLine(center, lineDir, lines.begin(), lines.end());
+    Point leftBoundary = maxVariationDifferenceAlongLine(center, -lineDir);
+    Point rightBoundary = maxVariationDifferenceAlongLine(center, lineDir);
+
+    // extend boundaries if there are nearby lines
+    float allowedDistance = 0.08*norm(leftBoundary-rightBoundary); // TODO: tune factor
+    leftBoundary = extendBoundWithLines(leftBoundary, -lineDir, allowedDistance, lines.rbegin(), lines.rend());
+    rightBoundary = extendBoundWithLines(rightBoundary, lineDir, allowedDistance, lines.begin(), lines.end());
+
+    // TODO: shrink boundaries again based on intensity?
 
     // draw estimated bounding box for the barcode
     RotatedRect barcodeBB(0.5*(leftBoundary+rightBoundary), {(float)norm(leftBoundary-rightBoundary), length}, std::atan2(leftBoundary.y-rightBoundary.y, leftBoundary.x-rightBoundary.x)*180/CV_PI);
@@ -300,8 +287,36 @@ void LSDStep::execute(void *data){
     circle(visualization, rightBoundary, 4, {0, 0, 255});
 
     // show visualization
-    imshow("LSDStep", visualization);
+    if (visualize) imshow("LSDStep", visualization);
 
     LSDResult *res = new LSDResult(gray, leftBoundary, rightBoundary, length);
     emit completed((void*)res);
+}
+
+template <class LineIt>
+Point LSDStep::extendBoundWithLines(const Point &bound, const Point2f &dir, float allowedDistance, LineIt linesBegin, LineIt linesEnd)
+{
+    LineIt nextLine = find_if(linesBegin, linesEnd, [&](const auto &line) {
+        Point2f p(line[0], line[1]);
+        Point2f q(line[2], line[3]);
+        Point2f center = 0.5*(p+q);
+
+        return (center-(Point2f)bound).dot(dir) > 0;
+    });
+
+    Point2f lastPos = bound;
+    for (; nextLine < linesEnd; ++nextLine) {
+        Point2f p((*nextLine)[0], (*nextLine)[1]);
+        Point2f q((*nextLine)[2], (*nextLine)[3]);
+        Point2f center = 0.5*(p+q);
+        if (norm(center-lastPos) < allowedDistance) {
+            cout << "lsd extend " << center << " " << lastPos << " " << allowedDistance << endl;
+            lastPos = center;
+        } else {
+            cout << "lsd extend break " << center << " " << lastPos << " " << allowedDistance << endl;
+            break;
+        }
+    }
+
+    return lastPos;
 }

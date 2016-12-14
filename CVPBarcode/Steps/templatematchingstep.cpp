@@ -201,12 +201,12 @@ void TemplateMatchingStep::execute(void* data){
                     *result += QString::number(barcode[i]);
                 }
                 emit completed((void*)result);
-                imshow("scanlines", vis);
+                //imshow("scanlines", vis);
                 return;
             }
         }
     }
-    imshow("scanlines", vis);
+    //imshow("scanlines", vis);
     *result = "fail";
     emit completed((void*)result);
 }
@@ -259,8 +259,8 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
     cout << lowMean << " " << lowVar << " " << highMean << " " << highVar << " " << var << endl << endl;
 
     // TODO: tune parameters
-    //double deltaO = 2*w;
-    double deltaO = 5*w; // TODO: bounds checking! scan line long enough?
+    double deltaO = 3*w;
+    //double deltaO = 5*w; // TODO: bounds checking! scan line long enough?
     double deltaW = 2*deltaO/95;
 
     int wmin = w-deltaW;

@@ -5,7 +5,7 @@ void LSDPipeline::execute(void* data){
     QString path = *static_cast<QString*>(data);
 
     LoaderStep loader; //use this to provide some parameters
-    LSDStep lsd;
+    LSDStep lsd(visualize);
     //ShowStep display("After LSD");
     TemplateMatchingStep reader("../cells");
 

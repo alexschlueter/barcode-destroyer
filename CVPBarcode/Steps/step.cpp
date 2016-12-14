@@ -1,6 +1,6 @@
 #include "step.h"
 #include <iostream>
-Step::Step()
+Step::Step(bool _visualize) : visualize(_visualize)
 {
 
 }

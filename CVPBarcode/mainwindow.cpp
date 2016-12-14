@@ -107,6 +107,7 @@ void MainWindow::setupTable(){
     pb_eval->setEnabled(false);
     preview->clear();
     lbl_status->setText("");
+    pb_status->setValue(0);
 }
 
 void MainWindow::import(){
@@ -245,7 +246,7 @@ void MainWindow::evaluate(){
     if(sum==0) return;
     int error = 0;
     for(int i = 0; i<sum; i++){
-        if(getTableText(i,1)!=getTableText(i,2)) error++;
+        if(getTableText(i,1)!=getTableText(i,2).left(getTableText(i,1).length())) error++;
     }
     QString result = "Total: " + QString::number(sum) + "\tCorrect: "
             + QString::number(sum-error) + "\tErrors: " + QString::number(error)
@@ -256,7 +257,7 @@ void MainWindow::evaluate(){
 void MainWindow::detectSingle(){
     int cr = mainTable->currentRow();
     if(cr>=0){
-        auto pipe = new LSDPipeline(getTableText(cr,3));
+        auto pipe = new LSDPipeline(getTableText(cr,3), true);
         pipe->moveToThread(threads[0]);
         connect(pipe,&Pipeline::completed,[this,pipe,cr](QString result){
             QMetaObject::invokeMethod(this,"setTableText",Qt::QueuedConnection,Q_ARG(int,cr),Q_ARG(int,2),Q_ARG(QString,result));

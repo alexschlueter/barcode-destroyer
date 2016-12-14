@@ -11,8 +11,8 @@ void LoaderStep::execute(void *data){
     cv::Mat color = cv::imread(path.toStdString());
     cv::Mat *image = new cv::Mat;
     cv::cvtColor(color,*image,CV_BGR2GRAY);
-    scaledSize = getNewSize(*image,500);
-    cv::resize(*image,*image,scaledSize);
+    //scaledSize = getNewSize(*image,500);
+    //cv::resize(*image,*image,scaledSize);
     emit completed((void*)image);
 }
 
