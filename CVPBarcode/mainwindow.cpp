@@ -107,7 +107,7 @@ void MainWindow::setupTable(){
     pb_eval->setEnabled(false);
     preview->clear();
     lbl_status->setText("");
-    pb_status->setValue(0);
+    pb_status->reset();
 }
 
 void MainWindow::import(){
