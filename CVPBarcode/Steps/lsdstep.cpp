@@ -4,6 +4,8 @@
 using namespace std;
 using namespace cv;
 
+const std::array<float, 5> LSDStep::scanOffsets = {-0.3, -0.15, 0, 0.15, 0.3};
+
 void LSDStep::drawRotatedRect(Mat& img, RotatedRect rect) {
     Point2f points[4];
     rect.points(points);
@@ -11,13 +13,58 @@ void LSDStep::drawRotatedRect(Mat& img, RotatedRect rect) {
         line(img, points[i], points[(i+1)%4], {0, 0, 255}, 2);
 }
 
+bool LSDStep::linesMaybeInSameBarcode(const Vec4f &line1, const Vec4f &line2)
+{
+    // end points of the line
+    Point2f p1(line1[0], line1[1]);
+    Point2f q1(line1[2], line1[3]);
+    // vector q1 -> p1
+    Point2f vec1 = p1 - q1;
+    // use -vec1.y instead of vec1.y for the angle because opencv's y axis is inverted
+    float angle1 = std::atan2(-vec1.y, vec1.x)*180/CV_PI;
+    Point2f center1 = 0.5*(p1+q1);
+    float length1 = norm(vec1);
+    // end points of second line
+    Point2f p2(line2[0], line2[1]);
+    Point2f q2(line2[2], line2[3]);
+    // vector q2 -> p2
+    Point2f vec2 = p2 - q2;
+    // as above
+    float angle2 = std::atan2(-vec2.y, vec2.x)*180/CV_PI;
+    Point2f center2 = 0.5*(p2+q2);
+    float length2 = norm(vec2);
+
+    // angle distance between the two lines
+    float angleDist = std::abs(angle1-angle2);
+    // angle distance might be smaller "the other way around", e.g. distance between
+    // 1 and 359 degrees is 2 degrees, not 358
+    // additionally, a line with angle 180 is the same as a line with angle 0
+    angleDist = std::min(angleDist, std::abs(180-angleDist));
+    // once more
+    angleDist = std::min(angleDist, std::abs(180-angleDist));
+
+    // length difference, relative to the length of the first line
+    float relLengthDiff = (length1-length2)/length1;
+
+    // Two lines with same angle, length and close centers might still not be placed next
+    // to each other like lines in a barcode.
+    // If the lines belong to the same barcode, we expect the vector between the centers to be
+    // approximately orthogonal to the lines themselves, i.e. we expect the projection of this vector
+    // onto the first line to be small.
+    float relProjCenterDiff = (center2-center1).dot(vec1) / (length1*length1);
+
+    // check if the lines probably belong to the same barcode
+    return angleDist < angleTol && std::abs(relLengthDiff) < lengthTol && std::abs(relProjCenterDiff) < projCenterTol;
+}
+
 /**
  * @brief LSDStep::maxVariationDifferenceAlongLine
  * @param start start point of the scan line
- * @param dir direction from the start point to scan
+ * @param dir direction from the start point to scan in
  * @return point with maximal variation difference (likely boundary of a barcode)
  */
-Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point2f &dir) {
+template <class LineIt>
+Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point2f &dir, LineIt linesBegin, LineIt linesEnd) {
 
     // need vector perpendicular to dir to scan multiple lines above and below the actual line
     Point2f perp = {-dir.y, dir.x};
@@ -32,7 +79,7 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
     int maxVar = std::numeric_limits<int>::min();
     /*std::vector<int> vars;
     vars.reserve(fullBisectIt.count);*/
-    Point maxPos;
+    Point2f maxPos;
     // create Rect of the same size as the image for simple bound checking with Rect::contains
     Rect imgRect(Point(), gray.size());
 
@@ -119,7 +166,27 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
     return fullBisectIt.pos();
     */
 
-    return maxPos;
+    LineIt nextLine = find_if(linesBegin, linesEnd, [&](const auto &line) {
+        Point2f p(line[0], line[1]);
+        Point2f q(line[2], line[3]);
+        Point2f center = 0.5*(p+q);
+
+        return (center-start).dot(dir) > norm(maxPos-start)*norm(dir);
+    });
+    Point2f lastPos = maxPos;
+    float allowedDistance = 0.2*norm(maxPos-start);
+    for (; nextLine < linesEnd; ++nextLine) {
+        Point2f p((*nextLine)[0], (*nextLine)[1]);
+        Point2f q((*nextLine)[2], (*nextLine)[3]);
+        Point2f center = 0.5*(p+q);
+        if (norm(center-lastPos) < allowedDistance) {
+            lastPos = center;
+        } else {
+            break;
+        }
+    }
+
+    return lastPos;
 }
 
 void LSDStep::execute(void *data){
@@ -143,52 +210,24 @@ void LSDStep::execute(void *data){
     for (auto &&line : lines) {
         // calculate score for this line
 
-        // end points of the line
+        // end points end center of the line
         Point2f p1(line[0], line[1]);
         Point2f q1(line[2], line[3]);
-        // vector q1 -> p1
-        Point2f vec1 = p1 - q1;
-        // use -vec1.y instead of vec1.y for the angle because opencv's y axis is inverted
-        float angle1 = std::atan2(-vec1.y, vec1.x)*180/CV_PI;
         Point2f center1 = 0.5*(p1+q1);
-        float length1 = norm(vec1);
+        float length1 = norm(p1-q1);
 
         // iterate over all other lines and look for nearby lines that might belong to the same barcode as the first
         for (auto &&line2 : lines) {
-            // end points of second line
+
+            // end points and center of second line
             Point2f p2(line2[0], line2[1]);
             Point2f q2(line2[2], line2[3]);
-            // vector q2 -> p2
-            Point2f vec2 = p2 - q2;
-            // as above
-            float angle2 = std::atan2(-vec2.y, vec2.x)*180/CV_PI;
             Point2f center2 = 0.5*(p2+q2);
-            float length2 = norm(vec2);
-
-            // angle distance between the two lines
-            float angleDist = std::abs(angle1-angle2);
-            // angle distance might be smaller "the other way around", e.g. distance between
-            // 1 and 359 degrees is 2 degrees, not 358
-            // additionally, a line with angle 180 is the same as a line with angle 0
-            angleDist = std::min(angleDist, std::abs(180-angleDist));
-            // once more
-            angleDist = std::min(angleDist, std::abs(180-angleDist));
-
-            // length difference, relative to the length of the first line
-            float relLengthDiff = (length1-length2)/length1;
             // center distance, relative to the length of the first line
             float relCenterDist = norm(center1-center2) / length1;
 
-            // Two lines with same angle, length and close centers might still not be placed next
-            // to each other like lines in a barcode.
-            // If the lines belong to the same barcode, we expect the vector between the centers to be
-            // approximately orthogonal to the lines themselves, i.e. we expect the projection of this vector
-            // onto the first line to be small.
-            float relProjCenterDiff = (center2-center1).dot(vec1) / (length1*length1);
-
-            // check if the lines probably belong to the same barcode
-            if (angleDist < angleTol && std::abs(relLengthDiff) < lengthTol && std::abs(relProjCenterDiff) < projCenterTol && std::abs(relCenterDist) < centerDistTol) {
-                // if yes, increase the score of line 1
+            if (std::abs(relCenterDist) < centerDistTol && linesMaybeInSameBarcode(line, line2)) {
+                // increase the score of line 1
                 // we could probably just increase the score of line 2 at this point and save half of the loop steps
                 ++(*scoreIt);
             }
@@ -232,9 +271,22 @@ void LSDStep::execute(void *data){
     }
     Point2f center = 0.5*(p+q);
 
+    // TODO: for the following, we really only need the line centers
+    // maybe calculate those in advance?
+    lines.erase(remove_if(lines.begin(), lines.end(), [&](const auto &line) { return !linesMaybeInSameBarcode(bestLine, line); }), lines.end());
+    sort(lines.begin(), lines.end(), [&](const auto &line1, const auto &line2) {
+        Point2f p1(line1[0], line1[1]);
+        Point2f q1(line1[2], line1[3]);
+        Point2f center1 = 0.5*(p1+q1);
+        Point2f p2(line2[0], line2[1]);
+        Point2f q2(line2[2], line2[3]);
+        Point2f center2 = 0.5*(p2+q2);
+        return (center1-center).dot(lineDir) < (center2-center).dot(lineDir);
+    });
+
     // calculate boundaries of the barcode in both directions
-    Point leftBoundary = maxVariationDifferenceAlongLine(center, -lineDir);
-    Point rightBoundary = maxVariationDifferenceAlongLine(center, lineDir);
+    Point leftBoundary = maxVariationDifferenceAlongLine(center, -lineDir, lines.rbegin(), lines.rend());
+    Point rightBoundary = maxVariationDifferenceAlongLine(center, lineDir, lines.begin(), lines.end());
 
     // draw estimated bounding box for the barcode
     RotatedRect barcodeBB(0.5*(leftBoundary+rightBoundary), {(float)norm(leftBoundary-rightBoundary), length}, std::atan2(leftBoundary.y-rightBoundary.y, leftBoundary.x-rightBoundary.x)*180/CV_PI);

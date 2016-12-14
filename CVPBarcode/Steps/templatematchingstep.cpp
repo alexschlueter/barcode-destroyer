@@ -173,7 +173,7 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 }
 
 void TemplateMatchingStep::execute(void* data){
-    LSDResult *lsdres = static_cast<LSDResult*>(data);
+    unique_ptr<LSDResult> lsdres(static_cast<LSDResult*>(data));
     Point perp(lsdres->leftBnd.y - lsdres->rightBnd.y, lsdres->rightBnd.x - lsdres->leftBnd.x);
     perp *= lsdres->height / (2*norm(perp));
     Mat vis = lsdres->img.clone();
@@ -185,8 +185,7 @@ void TemplateMatchingStep::execute(void* data){
         int dir = line%2 ? 1 : -1;
         float offset = ((line+1) / 2) / (float)totalSteps;
         cout << "scan line " << line << " " << dir << " " << offset << endl;
-        circle(vis, lsdres->leftBnd+dir*offset*perp, 3, {0, 255, 0});
-        circle(vis, lsdres->rightBnd+dir*offset*perp, 3, {0, 0, 255});
+        cv::line(vis, lsdres->leftBnd+dir*offset*perp, lsdres->rightBnd+dir*offset*perp, 3, 0);
         // TODO: bounds checking
         for (int orientation = 0; orientation < 2; orientation++) {
             unique_ptr<LineIterator> scanIt;
@@ -226,7 +225,6 @@ bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode
     }
 
     for (int i = scanIt.count / 2; i < scanIt.count; i++) {
-        cout << (int)scan[i] << " ";
         highMean += scan[i];
         highVar += scan[i]*scan[i];
         var += scan[i]*scan[i];

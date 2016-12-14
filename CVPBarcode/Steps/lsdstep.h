@@ -12,22 +12,24 @@ class LSDStep : public Step
 {
     Q_OBJECT
 public:
-    LSDStep() : scanOffsets{-0.3, -0.15, 0, 0.15, 0.3} {}
+    LSDStep() {}
 
 public slots:
     void execute(void* data);
 
 private:
-    const float angleTol = 0.1f*180/CV_PI;
-    const float lengthTol = 0.3f;
-    const float projCenterTol = 0.1f;
-    const float centerDistTol = 1.0f;
-    const std::array<float, 5> scanOffsets;
+    static constexpr float angleTol = 0.1f*180/CV_PI;
+    static constexpr float lengthTol = 0.3f;
+    static constexpr float projCenterTol = 0.1f;
+    static constexpr float centerDistTol = 1.0f;
+    static const std::array<float, 5> scanOffsets;
 
     cv::Mat gray;
 
     void drawRotatedRect(cv::Mat& img, cv::RotatedRect rect);
-    cv::Point maxVariationDifferenceAlongLine(const cv::Point2f &start, const cv::Point2f &dir);
+    static bool linesMaybeInSameBarcode(const cv::Vec4f &line1, const cv::Vec4f &line2);
+    template <class LineIt>
+    cv::Point maxVariationDifferenceAlongLine(const cv::Point2f &start, const cv::Point2f &dir, LineIt linesBegin, LineIt linesEnd);
 };
 
 struct LSDResult {
