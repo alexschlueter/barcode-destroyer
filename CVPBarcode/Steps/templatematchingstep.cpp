@@ -188,13 +188,15 @@ void TemplateMatchingStep::execute(void* data){
         cv::line(vis, lsdres->leftBnd+dir*offset*perp, lsdres->rightBnd+dir*offset*perp, 3, 0);
         // TODO: bounds checking
         for (int orientation = 0; orientation < 2; orientation++) {
-            unique_ptr<LineIterator> scanIt;
+            Point2f leftBnd, rightBnd;
             if (orientation) {
-                scanIt = make_unique<LineIterator>(lsdres->img, lsdres->leftBnd+dir*offset*perp, lsdres->rightBnd+dir*offset*perp);
+                leftBnd = lsdres->leftBnd+dir*offset*perp;
+                rightBnd = lsdres->rightBnd+dir*offset*perp;
             } else {
-                scanIt = make_unique<LineIterator>(lsdres->img, lsdres->rightBnd+dir*offset*perp, lsdres->leftBnd+dir*offset*perp);
+                rightBnd = lsdres->leftBnd+dir*offset*perp;
+                leftBnd = lsdres->rightBnd+dir*offset*perp;
             }
-            if (readBarcodeFromLine(*scanIt, barcode)) {
+            if (readBarcodeFromLine(lsdres->img, leftBnd, rightBnd, barcode)) {
                 for (int i = 0; i < 13; i++) {
                     *result += QString::number(barcode[i]);
                 }
@@ -209,9 +211,9 @@ void TemplateMatchingStep::execute(void* data){
     emit completed((void*)result);
 }
 
-bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode[]) {
+bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, Point2f rightBnd, int barcode[]) {
+    LineIterator scanIt(img, leftBnd, rightBnd);
     vector<uchar> scan(scanIt.count);
-    LineIterator scanIt2 = scanIt;
 
     for (int i = 0; i < scanIt.count; i++, ++scanIt) {
         scan[i] = **scanIt;
@@ -237,13 +239,21 @@ bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode
     highMean /= n2;
     highVar = highVar/n2 - highMean*highMean;
 
-    double w = scanIt.count / 95.0;
+    double w = scanIt.count / 95.0; // TODO: scanIt vs. fullScanIt slightly different?
     cout << "w = " << w << endl;
-    vector<double> lowDists(scanIt.count), highDists(scanIt.count);
 
-    for (int i = 0; i < scanIt2.count; i++, ++scanIt2) {
-        lowDists[i] = pow(max(**scanIt2-lowMean, 0.0), 2)/(2*var);
-        highDists[i] = pow(min(**scanIt2-highMean, 0.0), 2)/(2*var);
+    float fullWidth = norm(leftBnd-rightBnd);
+    float longEnough = (img.rows*img.rows+img.cols*img.cols)/fullWidth;
+    LineIterator fullScanIt(img, leftBnd+longEnough*(leftBnd-rightBnd), rightBnd+longEnough*(rightBnd-leftBnd));
+    vector<double> lowDists(fullScanIt.count), highDists(fullScanIt.count);
+
+    int oStart = -1;
+    for (int i = 0; i < fullScanIt.count; i++, ++fullScanIt) {
+        if (oStart == -1 && norm((Point2f)fullScanIt.pos()-rightBnd) <= fullWidth) {
+            oStart = i;
+        }
+        lowDists[i] = pow(max(**fullScanIt-lowMean, 0.0), 2)/(2*var);
+        highDists[i] = pow(min(**fullScanIt-highMean, 0.0), 2)/(2*var);
     }
 
     cout << lowMean << " " << lowVar << " " << highMean << " " << highVar << " " << var << endl << endl;
@@ -292,7 +302,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(LineIterator &scanIt, int barcode
 
                 MatchResult &matchResult = matchResults[pos][type][digit];
 
-                double o = 3*w + pos*7*w;
+                double o = oStart + 3*w + pos*7*w;
                 int codeType;
                 if (pos < 6) {
                     codeType = type;

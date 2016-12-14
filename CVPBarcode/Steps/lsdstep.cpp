@@ -174,14 +174,16 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
         return (center-start).dot(dir) > norm(maxPos-start)*norm(dir);
     });
     Point2f lastPos = maxPos;
-    float allowedDistance = 0.2*norm(maxPos-start);
+    float allowedDistance = 0.2*norm(maxPos-start); // TODO: tune 0.2 / estimate module width
     for (; nextLine < linesEnd; ++nextLine) {
         Point2f p((*nextLine)[0], (*nextLine)[1]);
         Point2f q((*nextLine)[2], (*nextLine)[3]);
         Point2f center = 0.5*(p+q);
         if (norm(center-lastPos) < allowedDistance) {
+            cout << "lsd extend " << center << " " << lastPos << " " << allowedDistance << endl;
             lastPos = center;
         } else {
+            cout << "lsd extend break " << center << " " << lastPos << " " << allowedDistance << endl;
             break;
         }
     }
