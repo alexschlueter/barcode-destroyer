@@ -21,6 +21,9 @@ public slots:
     void jobsdone(void* result);
 signals:
     void completed(QString);
+    void showImage(const std::string &, const cv::Mat &);
+private slots:
+    void showImageSlot(const std::string &, const cv::Mat &);
 };
 
 #endif // PIPELINE_H

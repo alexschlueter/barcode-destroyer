@@ -136,17 +136,17 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
     // experiment to choose the local maximum closest to start instead of the global maximum
     // problem: calibration of the 0.4/0.7 constants, sometimes box too small
     int firstMax, firstMaxIdx = -1;
-    cout << "vars size " << vars.size() << " maxvar " << maxVar << endl;
+    //cout << "vars size " << vars.size() << " maxvar " << maxVar << endl;
     for (size_t i = 0; i < vars.size(); i++) {
         int var = vars[i];
-        cout << var << endl;
+        //cout << var << endl;
         if (var > 0.4*maxVar && (firstMaxIdx == -1 || var > firstMax)) {
-            cout << "a " << firstMax << " " << firstMaxIdx << " " << var << " " << i << endl;
+            //cout << "a " << firstMax << " " << firstMaxIdx << " " << var << " " << i << endl;
             firstMax = var;
             firstMaxIdx = i;
 
         } else if (firstMaxIdx != -1 && var < 0.7*firstMax) {
-            cout << "b " << firstMaxIdx << " " << firstMax << " " << var << endl;
+            //cout << "b " << firstMaxIdx << " " << firstMax << " " << var << endl;
             break;
         }
     }
@@ -287,7 +287,7 @@ void LSDStep::execute(void *data){
     circle(visualization, rightBoundary, 4, {0, 0, 255});
 
     // show visualization
-    if (visualize) imshow("LSDStep", visualization);
+    emit showImage("LineSegmentDetector", visualization);
 
     LSDResult *res = new LSDResult(gray, leftBoundary, rightBoundary, length);
     emit completed((void*)res);

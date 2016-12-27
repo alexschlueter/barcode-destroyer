@@ -20,6 +20,8 @@
 #include <QApplication>
 #include <QThread>
 #include <QVector>
+#include <QScrollArea>
+#include <QSplitter>
 
 
 #include "Pipeline/pipeline.h"
@@ -40,7 +42,10 @@ private:
     QGridLayout * layout;
     QWidget * menubar;
     QWidget * stausbar;
-    QLabel * preview;
+    QScrollArea * scrollArea;
+    QVBoxLayout * scrollLayout;
+    QWidget * scrollWidget = nullptr;
+    QSplitter * splitter;
 
     QWidget * importW;
 
@@ -60,9 +65,17 @@ private:
 
     QLabel * lbl_status;
     QProgressBar * pb_status;
+
+    std::vector<std::vector<std::pair<std::string, cv::Mat>>> images;
+
     void setupUI();
     void includeFile(QString filepath,QString name,QString code);
     QString getTableText(int r, int c);
+    bool resultIsCorrect(int row, const QString &result);
+    void updateRowWithResult(int row, const QString &result);
+
+signals:
+    void previewChanged();
 
 private slots:
     void setTableText(int r, int c, QString t);

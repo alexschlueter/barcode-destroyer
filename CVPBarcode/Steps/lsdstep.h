@@ -12,7 +12,6 @@ class LSDStep : public Step
 {
     Q_OBJECT
 
-    using Step::Step;
 public slots:
     void execute(void* data);
 

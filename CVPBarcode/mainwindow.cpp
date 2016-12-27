@@ -2,6 +2,7 @@
 #include "Pipeline/pipeline.h"
 #include "Pipeline/gradientblurpipeline.h"
 #include "Pipeline/lsdpipeline.h"
+#include "aspectratiopixmaplabel.h"
 
 #define THREADCOUNT 4
 
@@ -53,18 +54,23 @@ void MainWindow::setupUI(){
     pb_eval = new QPushButton("Evaluate");
     menulayout->addWidget(pb_eval);
 
+    splitter = new QSplitter;
+    splitter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    layout->addWidget(splitter, 1, 0);
+
     //mainTable
-    mainTable = new QTableWidget();
+    mainTable = new QTableWidget;
     mainTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     mainTable->setSelectionMode(QAbstractItemView::SingleSelection);
     mainTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    layout->addWidget(mainTable,1,0,1,1);
 
+    splitter->addWidget(mainTable);
 
-    //settings
-    preview = new QLabel();
-    layout->addWidget(preview,1,1,1,1);
-
+    //image preview area
+    scrollArea = new QScrollArea;
+    splitter->addWidget(scrollArea);
+    splitter->setStretchFactor(0, 3);
+    splitter->setStretchFactor(1, 1);
 
     //stausbar
     stausbar = new QWidget(mainWidget);
@@ -83,6 +89,7 @@ void MainWindow::setupUI(){
     connect(pb_clear,SIGNAL(clicked(bool)),this,SLOT(setupTable()));
     connect(pb_import,SIGNAL(clicked(bool)),this,SLOT(import()));
     connect(mainTable,SIGNAL(currentCellChanged(int,int,int,int)),this,SLOT(showPreview()));
+    connect(this, &MainWindow::previewChanged, this, &MainWindow::showPreview);
     connect(pb_eval,SIGNAL(clicked(bool)),this,SLOT(evaluate()));
     connect(pb_solve_selected,SIGNAL(clicked(bool)),this,SLOT(detectSingle()));
     connect(pb_solve_all,SIGNAL(clicked(bool)),this,SLOT(detectAll()));
@@ -105,9 +112,11 @@ void MainWindow::setupTable(){
     pb_solve_all->setEnabled(false);
     pb_solve_selected->setEnabled(false);
     pb_eval->setEnabled(false);
-    preview->clear();
     lbl_status->setText("");
     pb_status->reset();
+    delete scrollWidget;
+    scrollWidget = nullptr;
+    images.clear();
 }
 
 void MainWindow::import(){
@@ -217,6 +226,7 @@ void MainWindow::includeFile(QString filepath,QString name, QString code){
     setTableText(rowcount,0,name);
     setTableText(rowcount,3,filepath);
     setTableText(rowcount,1,code);
+    images.push_back({{"Original", cv::imread(filepath.toStdString())}});
 }
 
 void MainWindow::setTableText(int r, int c, QString t){
@@ -232,13 +242,70 @@ QString MainWindow::getTableText(int r, int c){
     return itab->text();
 }
 
+bool MainWindow::resultIsCorrect(int row, const QString &result)
+{
+    return getTableText(row,1) == result.left(getTableText(row,1).length());
+}
+
+void MainWindow::updateRowWithResult(int row, const QString &result)
+{
+    setTableText(row, 2, result);
+    auto color = resultIsCorrect(row, result) ? QColor(0, 255, 0, 20) : QColor(255, 0, 0, 20);
+    for (int col = 0; col < mainTable->columnCount(); col++) {
+        mainTable->item(row, col)->setBackground(color);
+    }
+}
+
 void MainWindow::showPreview(){
-    preview->clear();
-    QString path = getTableText(mainTable->currentRow(),3);
-    if(path.isEmpty()) return;
-    QImage image = QImage(path);
-    image = image.scaledToWidth(300);
-    preview->setPixmap(QPixmap::fromImage(image));
+    int cr = mainTable->currentRow();
+    if (cr < 0) return;
+
+    QColor color;
+    QPalette tablePalette = mainTable->palette();
+    if (getTableText(cr, 2).isEmpty()) {
+        tablePalette.setBrush(QPalette::HighlightedText, Qt::white);
+        color = QColor(48, 140, 198, 255);
+    } else {
+        tablePalette.setBrush(QPalette::HighlightedText, Qt::black);
+        if (resultIsCorrect(cr, getTableText(cr, 2))) {
+            //color = QColor(0, 255, 0, 50);
+            color = Qt::darkGreen;
+            color.setAlpha(50);
+        } else {
+            color = QColor(255, 0, 0, 50);
+        }
+    }
+    tablePalette.setBrush(QPalette::Highlight, color);
+    mainTable->setPalette(tablePalette);
+    if (scrollWidget) delete scrollWidget;
+
+    scrollWidget = new QWidget;
+    scrollArea->setWidget(scrollWidget);
+    scrollLayout = new QVBoxLayout(scrollWidget);
+    scrollArea->setWidgetResizable(true);
+    scrollWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    for (const auto &pair : images[cr]) {
+        QImage::Format format;
+        if (pair.second.type() == CV_8UC3) {
+            format = QImage::Format_RGB888;
+            cvtColor(pair.second, pair.second,CV_BGR2RGB);
+        } else {
+            format = QImage::Format_Grayscale8;
+        }
+
+        QImage image((uchar*)pair.second.data, pair.second.cols, pair.second.rows, pair.second.step, format);
+        QLabel *name = new QLabel(QString::fromStdString(pair.first));
+        name->setAlignment(Qt::AlignHCenter);
+
+        scrollLayout->addWidget(name);
+        auto img = new AspectRatioPixmapLabel;
+        img->setPixmap(QPixmap::fromImage(image));
+        img->setAlignment(Qt::AlignHCenter);
+        scrollLayout->addWidget(img, 0, Qt::AlignHCenter);
+        //previews.push_back(prev);
+    }
+    scrollLayout->addStretch();
 }
 
 void MainWindow::evaluate(){
@@ -246,7 +313,7 @@ void MainWindow::evaluate(){
     if(sum==0) return;
     int error = 0;
     for(int i = 0; i<sum; i++){
-        if(getTableText(i,1)!=getTableText(i,2).left(getTableText(i,1).length())) error++;
+        if(!resultIsCorrect(i, getTableText(i, 2))) error++;
     }
     QString result = "Total: " + QString::number(sum) + "\tCorrect: "
             + QString::number(sum-error) + "\tErrors: " + QString::number(error)
@@ -257,10 +324,15 @@ void MainWindow::evaluate(){
 void MainWindow::detectSingle(){
     int cr = mainTable->currentRow();
     if(cr>=0){
-        auto pipe = new LSDPipeline(getTableText(cr,3), true);
+        auto pipe = new LSDPipeline(getTableText(cr,3));
         pipe->moveToThread(threads[0]);
-        connect(pipe,&Pipeline::completed,[this,pipe,cr](QString result){
-            QMetaObject::invokeMethod(this,"setTableText",Qt::QueuedConnection,Q_ARG(int,cr),Q_ARG(int,2),Q_ARG(QString,result));
+        connect(pipe, &Pipeline::showImage, [this, cr](const std::string &name, const cv::Mat &img) {
+            if (images.size() <= (uint)cr) return;
+            images[cr].push_back({name, img});
+            emit previewChanged();
+        });
+        connect(pipe, &Pipeline::completed, this, [this,pipe,cr](QString result){
+            updateRowWithResult(cr, result);
             pipe->deleteLater();
         });
         QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
@@ -268,14 +340,19 @@ void MainWindow::detectSingle(){
 }
 
 void MainWindow::detectAll(){
-    int max = mainTable->rowCount();
+    uint max = mainTable->rowCount();
     pb_status->setRange(1,max);
-    for(int i = 0; i<max; i++){
+    for(uint i = 0; i<max; i++){
         auto pipe = new LSDPipeline(getTableText(i,3));
         pipe->moveToThread(threads[i%THREADCOUNT]);
-        connect(pipe,&Pipeline::completed,[this,pipe,i](QString result){
-            QMetaObject::invokeMethod(this,"setTableText",Qt::QueuedConnection,Q_ARG(int,i),Q_ARG(int,2),Q_ARG(QString,result));
-            QMetaObject::invokeMethod(this,"incrementStatus",Qt::QueuedConnection);
+        connect(pipe, &Pipeline::showImage, [this, i](const std::string &name, const cv::Mat &img) {
+            if (images.size() <= i) return;
+            images[i].push_back({name, img});
+            if (mainTable->currentRow() == (int)i) emit previewChanged();
+        });
+        connect(pipe, &Pipeline::completed, this, [this,pipe,i](QString result){
+            updateRowWithResult(i, result);
+            incrementStatus();
             pipe->deleteLater();
         });
         QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);

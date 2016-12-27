@@ -15,13 +15,13 @@ class Step : public QObject
 
 protected:
     bool visualize;
-public:
-    Step(bool _visualize=false);
+
 public slots:
     virtual void execute(void *data);
 
 signals:
     void completed(void*);
+    void showImage(const std::string &, const cv::Mat &);
 };
 
 #endif // STEP_H

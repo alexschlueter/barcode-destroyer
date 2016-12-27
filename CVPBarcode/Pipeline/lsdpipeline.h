@@ -12,9 +12,8 @@
 
 class LSDPipeline : public Pipeline
 {
-    bool visualize;
 public:
-    LSDPipeline(QString path, bool _visualize=false) : Pipeline(path), visualize(_visualize) {}
+    LSDPipeline(QString path) : Pipeline(path) {}
     void execute(void* data);
 };
 

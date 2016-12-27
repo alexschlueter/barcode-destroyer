@@ -162,6 +162,7 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 
         }
     }
+    /*
     for (int type = 0; type < 2; type++) {
         cout << endl << "type " << type << endl;
         for (int i = 0; i < 10; i++) {
@@ -170,6 +171,7 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
             }
         }
     }
+    */
 }
 
 void TemplateMatchingStep::execute(void* data){
@@ -190,23 +192,23 @@ void TemplateMatchingStep::execute(void* data){
         for (int orientation = 0; orientation < 2; orientation++) {
             Point2f leftBnd, rightBnd;
             if (orientation) {
-                leftBnd = lsdres->leftBnd+dir*offset*perp;
-                rightBnd = lsdres->rightBnd+dir*offset*perp;
-            } else {
                 rightBnd = lsdres->leftBnd+dir*offset*perp;
                 leftBnd = lsdres->rightBnd+dir*offset*perp;
+            } else {
+                leftBnd = lsdres->leftBnd+dir*offset*perp;
+                rightBnd = lsdres->rightBnd+dir*offset*perp;
             }
             if (readBarcodeFromLine(lsdres->img, leftBnd, rightBnd, barcode)) {
                 for (int i = 0; i < 13; i++) {
                     *result += QString::number(barcode[i]);
                 }
+                emit showImage("scanlines", vis);
                 emit completed((void*)result);
-                //imshow("scanlines", vis);
                 return;
             }
         }
     }
-    //imshow("scanlines", vis);
+    emit showImage("scanlines", vis);
     *result = "fail";
     emit completed((void*)result);
 }
@@ -277,7 +279,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
 
             vector<Cell> leftRightClips[2];
             if (wmin == wmax-1) {
-                cout << "w small" << endl;
+                //cout << "w small" << endl;
                 for (const auto &cell : cellsPerDigit[type][digit]) {
                     Cell newCell(cell);
                     if (newCell.clip(wClipLeft, ClipDirection::LEFT) && newCell.clip(wClipRight, ClipDirection::RIGHT)) {
