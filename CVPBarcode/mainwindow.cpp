@@ -235,7 +235,7 @@ void MainWindow::includeFile(QString filepath,QString name, QString code){
     setTableText(rowcount,0,name);
     setTableText(rowcount,3,filepath);
     setTableText(rowcount,1,code);
-    images.push_back({{"Original", cv::imread(filepath.toStdString())}});
+    images.push_back({{"Original", QImage(filepath)}});
 }
 
 void MainWindow::setTableText(int r, int c, QString t){
@@ -295,21 +295,13 @@ void MainWindow::showPreview(){
     scrollWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     for (const auto &pair : images[cr]) {
-        QImage::Format format;
-        if (pair.second.type() == CV_8UC3) {
-            format = QImage::Format_RGB888;
-            cvtColor(pair.second, pair.second,CV_BGR2RGB);
-        } else {
-            format = QImage::Format_Grayscale8;
-        }
 
-        QImage image((uchar*)pair.second.data, pair.second.cols, pair.second.rows, pair.second.step, format);
-        QLabel *name = new QLabel(QString::fromStdString(pair.first));
+        QLabel *name = new QLabel(pair.first);
         name->setAlignment(Qt::AlignHCenter);
 
         scrollLayout->addWidget(name);
         auto img = new AspectRatioPixmapLabel;
-        img->setPixmap(QPixmap::fromImage(image));
+        img->setPixmap(QPixmap::fromImage(pair.second));
         img->setAlignment(Qt::AlignHCenter);
         scrollLayout->addWidget(img, 0, Qt::AlignHCenter);
         //previews.push_back(prev);
@@ -336,7 +328,7 @@ void MainWindow::detectSingle(){
         images[cr].resize(1);
         auto pipe = getPipelines()[cb_pipelines->currentText()]->create(getTableText(cr,3));
         pipe->moveToThread(threads[0]);
-        connect(pipe, &Pipeline::showImage, [this, cr](const std::string &name, const cv::Mat &img) {
+        connect(pipe, &Pipeline::showImage, this, [this, cr](QString name, QImage img) {
             if (images.size() <= (uint)cr) return;
             images[cr].push_back({name, img});
             emit previewChanged();
@@ -356,7 +348,7 @@ void MainWindow::detectAll(){
         images[i].resize(1);
         auto pipe = getPipelines()[cb_pipelines->currentText()]->create(getTableText(i,3));
         pipe->moveToThread(threads[i%THREADCOUNT]);
-        connect(pipe, &Pipeline::showImage, [this, i](const std::string &name, const cv::Mat &img) {
+        connect(pipe, &Pipeline::showImage, this, [this, i](QString name, QImage img) {
             if (images.size() <= i) return;
             images[i].push_back({name, img});
             if (mainTable->currentRow() == (int)i) emit previewChanged();

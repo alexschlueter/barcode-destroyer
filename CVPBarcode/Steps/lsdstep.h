@@ -24,7 +24,6 @@ private:
 
     cv::Mat gray;
 
-    void drawRotatedRect(cv::Mat& img, cv::RotatedRect rect);
     static bool linesMaybeInSameBarcode(const cv::Vec4f &line1, const cv::Vec4f &line2);
     cv::Point maxVariationDifferenceAlongLine(const cv::Point2f &start, const cv::Point2f &dir);
     template <class LineIt>

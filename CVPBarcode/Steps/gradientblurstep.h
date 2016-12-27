@@ -19,7 +19,7 @@ public slots:
 
 private:
     cv::Mat image;
-    void drawContourOnOriginalImage(std::vector< std::vector < cv::Point > > , uint contoursToDrawCount);
+    void drawContours(cv::Mat &img, std::vector< std::vector < cv::Point > > , uint contoursToDrawCount);
 
 };
 bool compareContourAreas ( std::vector<cv::Point> contour1, std::vector<cv::Point> contour2 );

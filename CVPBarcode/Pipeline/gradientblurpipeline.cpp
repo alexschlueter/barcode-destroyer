@@ -7,7 +7,6 @@ void GradientBlurPipeline::execute(void* data){
     GradientBlurStep gb;
     ReaderStep reader;
 
-
     connectSteps(loader,gb);
     connectSteps(gb,reader);
     setFinal(reader);

@@ -1,17 +1,11 @@
 #include "lsdstep.h"
+#include "utils.h"
 #include <iostream>
 
 using namespace std;
 using namespace cv;
 
 const std::array<float, 5> LSDStep::scanOffsets = {-0.3, -0.15, 0, 0.15, 0.3};
-
-void LSDStep::drawRotatedRect(Mat& img, RotatedRect rect) {
-    Point2f points[4];
-    rect.points(points);
-    for (int i = 0; i < 4; i++)
-        line(img, points[i], points[(i+1)%4], {0, 0, 255}, 2);
-}
 
 bool LSDStep::linesMaybeInSameBarcode(const Vec4f &line1, const Vec4f &line2)
 {

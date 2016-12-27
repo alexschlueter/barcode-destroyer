@@ -1,4 +1,8 @@
 #include "gradientblurstep.h"
+#include "utils.h"
+#include <iostream>
+
+using namespace std;
 
 GradientBlurStep::GradientBlurStep()
 {
@@ -20,8 +24,10 @@ void GradientBlurStep::execute(void *data){
     emit showImage("AbsGradient", gradAbs);
 
     cv::blur( gradAbs, blur, cv::Point(9, 9) );
-    cv::threshold( blur, threshold, 225, 255, cv::THRESH_BINARY );
-    emit showImage("Threshold", threshold);
+    double mean = cv::mean(blur)[0];
+    cv::threshold( blur, threshold, 0.5*(255+mean), 255, cv::THRESH_BINARY );
+    //cv::threshold( blur, threshold, 225, 255, cv::THRESH_BINARY );
+    emit showImage("Blur + Threshold", threshold);
 
     kernel = cv::getStructuringElement( cv::MORPH_RECT, cv::Point(21, 7) );
     cv::morphologyEx( threshold, closed, cv::MORPH_CLOSE, kernel );
@@ -33,10 +39,19 @@ void GradientBlurStep::execute(void *data){
     emit showImage("Dilated", dilated);
 
     cv::findContours( eroded.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE );
-    std::sort( contours.begin(), contours.end(), compareContourAreas );
-    drawContourOnOriginalImage(contours,1);
+    if (!contours.empty()) {
+        std::sort( contours.begin(), contours.end(), compareContourAreas );
 
-    emit showImage("Contours", image);
+        cv::Mat color;
+        cv::cvtColor(image, color, cv::COLOR_GRAY2BGR);
+        drawContours(color, contours, 1);
+
+
+        cv::RotatedRect rect = cv::minAreaRect(contours[0]);
+        drawRotatedRect(color, rect);
+        emit showImage("Largest Contour + Bounding Box", color);
+    }
+
     emit completed((void*)&image);
 }
 
@@ -47,9 +62,9 @@ bool compareContourAreas ( std::vector<cv::Point> contour1, std::vector<cv::Poin
     return ( i > j );
 }
 
-void GradientBlurStep::drawContourOnOriginalImage( std::vector< std::vector< cv::Point > > contours, uint contoursToDrawCount ) {
+void GradientBlurStep::drawContours(cv::Mat &img, std::vector< std::vector< cv::Point > > contours, uint contoursToDrawCount ) {
     int count = ( contoursToDrawCount < contours.size() ) ? contoursToDrawCount : contours.size();
     for ( int i = 0; i < count; ++i ) {
-        cv::drawContours( image, contours, i, cv::Scalar(0, 255, 0), 2, 8 );
+        cv::drawContours( img, contours, i, cv::Scalar(0, 255, 0), 2, 8 );
     }
 }

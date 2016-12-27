@@ -70,7 +70,7 @@ private:
 
     QSettings settings;
 
-    std::vector<std::vector<std::pair<std::string, cv::Mat>>> images;
+    std::vector<std::vector<std::pair<QString, QImage>>> images;
 
     void setupUI();
     void includeFile(QString filepath,QString name,QString code);

@@ -1,6 +1,5 @@
 #include "pipeline.h"
 
-
 void Pipeline::start(){
     execute((void*)&path);
 }
@@ -21,8 +20,17 @@ void Pipeline::jobsdone(void *result){
     emit completed(*static_cast<QString*>(result));
 }
 
-void Pipeline::showImageSlot(const std::string &name, const cv::Mat &img) {
-    emit showImage(name, img);
+void Pipeline::showImageSlot(const std::string &name, const cv::Mat &mat) {
+    QImage::Format format;
+    if (mat.type() == CV_8UC3) {
+        format = QImage::Format_RGB888;
+        cvtColor(mat, mat, CV_BGR2RGB);
+    } else {
+        format = QImage::Format_Grayscale8;
+    }
+
+    QImage qimg((uchar*)mat.data, mat.cols, mat.rows, mat.step, format);
+    emit showImage(QString::fromStdString(name), qimg.copy());
 }
 
 QMap<QString, PipelineFactoryBase*> &getPipelines() {

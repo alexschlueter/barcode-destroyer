@@ -7,6 +7,7 @@
 #include <QThread>
 #include <QString>
 #include <QMap>
+#include <QImage>
 
 class Pipeline : public QObject
 {
@@ -22,7 +23,7 @@ public slots:
     void jobsdone(void* result);
 signals:
     void completed(QString);
-    void showImage(const std::string &, const cv::Mat &);
+    void showImage(QString, QImage);
 private slots:
     void showImageSlot(const std::string &, const cv::Mat &);
 };
