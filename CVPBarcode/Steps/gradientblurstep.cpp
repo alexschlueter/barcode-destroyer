@@ -17,21 +17,26 @@ void GradientBlurStep::execute(void *data){
 
     cv::subtract(gradX, gradY, grad);
     cv::convertScaleAbs(grad, gradAbs );
+    emit showImage("AbsGradient", gradAbs);
 
     cv::blur( gradAbs, blur, cv::Point(9, 9) );
     cv::threshold( blur, threshold, 225, 255, cv::THRESH_BINARY );
+    emit showImage("Threshold", threshold);
 
     kernel = cv::getStructuringElement( cv::MORPH_RECT, cv::Point(21, 7) );
     cv::morphologyEx( threshold, closed, cv::MORPH_CLOSE, kernel );
+    emit showImage("Closed", closed);
 
     cv::erode( closed, eroded, cv::Mat(), cv::Point(-1, -1), 4 );
+    emit showImage("Eroded", eroded);
     cv::dilate( eroded, dilated, cv::Mat(), cv::Point(-1, -1), 4 );
+    emit showImage("Dilated", dilated);
 
     cv::findContours( eroded.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE );
     std::sort( contours.begin(), contours.end(), compareContourAreas );
     drawContourOnOriginalImage(contours,1);
 
-    emit showImage("GradientBlur", image);
+    emit showImage("Contours", image);
     emit completed((void*)&image);
 }
 
