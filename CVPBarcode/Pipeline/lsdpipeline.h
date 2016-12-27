@@ -10,10 +10,10 @@
 
 #include <QString>
 
-class LSDPipeline : public Pipeline
+class LSDTemplatePipeline : public Pipeline
 {
 public:
-    LSDPipeline(QString path) : Pipeline(path) {}
+    LSDTemplatePipeline(QString path) : Pipeline(path) {}
     void execute(void* data);
 };
 

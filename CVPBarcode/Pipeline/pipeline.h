@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QThread>
 #include <QString>
+#include <QMap>
 
 class Pipeline : public QObject
 {
@@ -24,6 +25,25 @@ signals:
     void showImage(const std::string &, const cv::Mat &);
 private slots:
     void showImageSlot(const std::string &, const cv::Mat &);
+};
+
+
+struct PipelineFactoryBase
+{
+    virtual ~PipelineFactoryBase() {}
+    virtual Pipeline *create(QString) = 0;
+};
+
+QMap<QString, PipelineFactoryBase*> &getPipelines();
+
+template <class PipelineT>
+struct PipelineFactory : PipelineFactoryBase
+{
+    PipelineFactory(QString name) {
+        getPipelines().insert(name, this);
+    }
+
+    virtual Pipeline *create(QString path) { return new PipelineT(path); }
 };
 
 #endif // PIPELINE_H

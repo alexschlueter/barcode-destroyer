@@ -24,3 +24,8 @@ void Pipeline::jobsdone(void *result){
 void Pipeline::showImageSlot(const std::string &name, const cv::Mat &img) {
     emit showImage(name, img);
 }
+
+QMap<QString, PipelineFactoryBase*> &getPipelines() {
+    static QMap<QString, PipelineFactoryBase*> pipelines;
+    return pipelines;
+}

@@ -22,6 +22,7 @@
 #include <QVector>
 #include <QScrollArea>
 #include <QSplitter>
+#include <QSettings>
 
 
 #include "Pipeline/pipeline.h"
@@ -54,6 +55,7 @@ private:
     QPushButton * pb_solve_selected;
     QPushButton * pb_solve_all;
     QPushButton * pb_eval;
+    QComboBox * cb_pipelines;
 
     QComboBox * cb_type;
     QComboBox * cb_code;
@@ -65,6 +67,8 @@ private:
 
     QLabel * lbl_status;
     QProgressBar * pb_status;
+
+    QSettings settings;
 
     std::vector<std::vector<std::pair<std::string, cv::Mat>>> images;
 

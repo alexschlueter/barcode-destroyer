@@ -53,6 +53,15 @@ void MainWindow::setupUI(){
     menulayout->addWidget(pb_solve_all);
     pb_eval = new QPushButton("Evaluate");
     menulayout->addWidget(pb_eval);
+    cb_pipelines = new QComboBox;
+    for (const auto &pname : getPipelines().keys())
+        cb_pipelines->addItem(pname);
+    if (!settings.value("pipeline").isNull())
+        cb_pipelines->setCurrentText(settings.value("pipeline").toString());
+    connect(cb_pipelines, &QComboBox::currentTextChanged, [this](const QString &text) {
+        settings.setValue("pipeline", text);
+    });
+    menulayout->addWidget(cb_pipelines);
 
     splitter = new QSplitter;
     splitter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
@@ -264,7 +273,7 @@ void MainWindow::showPreview(){
     QPalette tablePalette = mainTable->palette();
     if (getTableText(cr, 2).isEmpty()) {
         tablePalette.setBrush(QPalette::HighlightedText, Qt::white);
-        color = QColor(48, 140, 198, 255);
+        color = QColor(48, 140, 198);
     } else {
         tablePalette.setBrush(QPalette::HighlightedText, Qt::black);
         if (resultIsCorrect(cr, getTableText(cr, 2))) {
@@ -324,7 +333,8 @@ void MainWindow::evaluate(){
 void MainWindow::detectSingle(){
     int cr = mainTable->currentRow();
     if(cr>=0){
-        auto pipe = new LSDPipeline(getTableText(cr,3));
+        images[cr].resize(1);
+        auto pipe = getPipelines()[cb_pipelines->currentText()]->create(getTableText(cr,3));
         pipe->moveToThread(threads[0]);
         connect(pipe, &Pipeline::showImage, [this, cr](const std::string &name, const cv::Mat &img) {
             if (images.size() <= (uint)cr) return;
@@ -343,7 +353,8 @@ void MainWindow::detectAll(){
     uint max = mainTable->rowCount();
     pb_status->setRange(1,max);
     for(uint i = 0; i<max; i++){
-        auto pipe = new LSDPipeline(getTableText(i,3));
+        images[i].resize(1);
+        auto pipe = getPipelines()[cb_pipelines->currentText()]->create(getTableText(i,3));
         pipe->moveToThread(threads[i%THREADCOUNT]);
         connect(pipe, &Pipeline::showImage, [this, i](const std::string &name, const cv::Mat &img) {
             if (images.size() <= i) return;

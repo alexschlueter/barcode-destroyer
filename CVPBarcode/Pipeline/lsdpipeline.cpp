@@ -1,7 +1,7 @@
 #include "lsdpipeline.h"
 #include "../Steps/templatematchingstep.h"
 
-void LSDPipeline::execute(void* data){
+void LSDTemplatePipeline::execute(void* data){
     QString path = *static_cast<QString*>(data);
 
     LoaderStep loader; //use this to provide some parameters
@@ -19,3 +19,4 @@ void LSDPipeline::execute(void* data){
     loader.execute((void*)&path);
 }
 
+PipelineFactory<LSDTemplatePipeline> lsdPipe("LSD + TemplateMatching");

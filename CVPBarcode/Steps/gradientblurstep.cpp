@@ -31,6 +31,7 @@ void GradientBlurStep::execute(void *data){
     std::sort( contours.begin(), contours.end(), compareContourAreas );
     drawContourOnOriginalImage(contours,1);
 
+    emit showImage("GradientBlur", image);
     emit completed((void*)&image);
 }
 
