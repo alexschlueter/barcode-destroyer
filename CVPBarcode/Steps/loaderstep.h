@@ -17,7 +17,6 @@ public slots:
     void execute(void* data);
 
 private:
-    QString path;
     cv::Size getNewSize(cv::Mat & src, uint maxSize);
 
 };

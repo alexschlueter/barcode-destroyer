@@ -24,4 +24,13 @@ signals:
     void showImage(const std::string &, const cv::Mat &);
 };
 
+struct LocalizationResult {
+    cv::Mat img;
+    cv::Point leftBnd;
+    cv::Point rightBnd;
+    float height;
+
+    LocalizationResult(cv::Mat _img, cv::Point _leftBnd, cv::Point _rightBnd, float _height) : img(_img), leftBnd(_leftBnd), rightBnd(_rightBnd), height(_height) {}
+};
+
 #endif // STEP_H

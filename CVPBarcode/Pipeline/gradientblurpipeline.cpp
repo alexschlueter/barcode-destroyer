@@ -1,11 +1,12 @@
 #include "gradientblurpipeline.h"
+#include "../Steps/templatematchingstep.h"
 
 void GradientBlurPipeline::execute(void* data){
     QString path = *static_cast<QString*>(data);
 
     LoaderStep loader; //use this to provide some parameters
     GradientBlurStep gb;
-    ReaderStep reader;
+    TemplateMatchingStep reader("../cells");
 
     connectSteps(loader,gb);
     connectSteps(gb,reader);
@@ -14,4 +15,4 @@ void GradientBlurPipeline::execute(void* data){
     loader.execute((void*)&path);
 }
 
-PipelineFactory<GradientBlurPipeline> gbPipe("GradientBlur (no reader)");
+PipelineFactory<GradientBlurPipeline> gbPipe("GradientBlur + TemplateMatching");

@@ -10,7 +10,7 @@ GradientBlurStep::GradientBlurStep()
 }
 
 void GradientBlurStep::execute(void *data){
-    this->image = *static_cast<cv::Mat*>(data);
+    this->image = static_cast<cv::Mat*>(data)->clone();
 
     cv::Mat gradX, gradY, grad, gradAbs, blur, threshold, kernel, closed, eroded, dilated;
     std::vector< std::vector< cv::Point > > contours;
@@ -39,7 +39,12 @@ void GradientBlurStep::execute(void *data){
     emit showImage("Dilated", dilated);
 
     cv::findContours( eroded.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE );
-    if (!contours.empty()) {
+    LocalizationResult *res;
+
+    if (contours.empty()) {
+        std::cout << "GradientBlurStep: no contours found" << std::endl;
+        res = new LocalizationResult(*static_cast<cv::Mat*>(data), {0, image.rows/2}, {image.cols-1, image.rows/2}, image.rows);
+    } else {
         std::sort( contours.begin(), contours.end(), compareContourAreas );
 
         cv::Mat color;
@@ -50,9 +55,26 @@ void GradientBlurStep::execute(void *data){
         cv::RotatedRect rect = cv::minAreaRect(contours[0]);
         drawRotatedRect(color, rect);
         emit showImage("Largest Contour + Bounding Box", color);
-    }
 
-    emit completed((void*)&image);
+        float height;// = std::min(rect.size.width, rect.size.height);
+        cv::Point leftBoundary, rightBoundary;
+        cv::Point2f points[4];
+        rect.points(points);
+
+        if (rect.size.height < rect.size.width) {
+            height = rect.size.height;
+            leftBoundary = 0.5f*(points[0]+points[1]);
+            rightBoundary = 0.5f*(points[2]+points[3]);
+        } else {
+            height = rect.size.width;
+            leftBoundary = 0.5f*(points[0]+points[3]);
+            rightBoundary = 0.5f*(points[1]+points[2]);
+        }
+
+        res = new LocalizationResult(*static_cast<cv::Mat*>(data), leftBoundary, rightBoundary, height);
+    }
+    delete static_cast<cv::Mat*>(data);
+    emit completed((void*)res);
 }
 
 

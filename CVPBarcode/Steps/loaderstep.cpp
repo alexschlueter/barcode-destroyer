@@ -1,4 +1,5 @@
 #include "loaderstep.h"
+#include <memory>
 
 LoaderStep::LoaderStep()
 {
@@ -6,9 +7,9 @@ LoaderStep::LoaderStep()
 }
 
 void LoaderStep::execute(void *data){
-    this->path = *static_cast<QString*>(data);
+    auto path = static_cast<QString*>(data);
     cv::Size scaledSize;
-    cv::Mat color = cv::imread(path.toStdString());
+    cv::Mat color = cv::imread(path->toStdString());
     cv::Mat *image = new cv::Mat;
     cv::cvtColor(color,*image,CV_BGR2GRAY);
     //scaledSize = getNewSize(*image,500);

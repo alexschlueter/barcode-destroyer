@@ -181,12 +181,12 @@ void MainWindow::importFromPath(){
     int count = 0;
     QString path = le_path->text();
     if(cb_type->currentIndex()==0){
-        QDirIterator * it = new QDirIterator(path);
-        while(it->hasNext()){
-            QString filep = it->next();
+        QDirIterator it(path);
+        while(it.hasNext()){
+            QString filep = it.next();
             if(filep.right(4).toLower()==".png" || filep.right(4).toLower() == ".jpg" || filep.right(4).toLower() == ".jpeg"){
                 QString code;
-                QFileInfo * a = new QFileInfo(filep);
+                QFileInfo a(filep);
                 if(cb_code->currentIndex()==0){
                     QFile file(filep+".txt");
                     if(!file.open(QIODevice::ReadOnly)){
@@ -196,15 +196,15 @@ void MainWindow::importFromPath(){
                     code = file.readLine(13);
                     file.close();
                 } else if(cb_code->currentIndex()==1){
-                    code = a->fileName().left(13);
+                    code = a.fileName().left(13);
                 }
-                includeFile(filep,a->fileName(),code);
+                includeFile(filep,a.fileName(),code);
                 count++;
             }
         }
     } else if(cb_type->currentIndex()==1){
         QString code;
-        QFileInfo * a = new QFileInfo(path);
+        QFileInfo a(path);
         if(cb_code->currentIndex()==0){
             QFile file(path+".txt");
             if(!file.open(QIODevice::ReadOnly)){
@@ -215,9 +215,9 @@ void MainWindow::importFromPath(){
             code = file.readLine(13);
             file.close();
         } else if(cb_code->currentIndex()){
-            code = a->fileName().left(13);
+            code = a.fileName().left(13);
         }
-        includeFile(path,a->fileName(),code);
+        includeFile(path,a.fileName(),code);
         count++;
     }
     if(count!=0){
@@ -286,6 +286,11 @@ void MainWindow::showPreview(){
     }
     tablePalette.setBrush(QPalette::Highlight, color);
     mainTable->setPalette(tablePalette);
+    // TODO: if the barcode result for an image arrives while the image is selected
+    // the highlight color doesn't change
+    // repaint doesn't work either
+    //mainTable->repaint();
+
     if (scrollWidget) delete scrollWidget;
 
     scrollWidget = new QWidget;

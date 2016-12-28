@@ -283,7 +283,7 @@ void LSDStep::execute(void *data){
     // show visualization
     emit showImage("LineSegmentDetector", visualization);
 
-    LSDResult *res = new LSDResult(gray, leftBoundary, rightBoundary, length);
+    LocalizationResult *res = new LocalizationResult(gray, leftBoundary, rightBoundary, length);
     emit completed((void*)res);
 }
 

@@ -175,7 +175,7 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 }
 
 void TemplateMatchingStep::execute(void* data){
-    unique_ptr<LSDResult> lsdres(static_cast<LSDResult*>(data));
+    unique_ptr<LocalizationResult> lsdres(static_cast<LocalizationResult*>(data));
     Point perp(lsdres->leftBnd.y - lsdres->rightBnd.y, lsdres->rightBnd.x - lsdres->leftBnd.x);
     perp *= lsdres->height / (2*norm(perp));
     Mat vis = lsdres->img.clone();
@@ -186,7 +186,7 @@ void TemplateMatchingStep::execute(void* data){
     for (int line = 0; line < numLines; line++) {
         int dir = line%2 ? 1 : -1;
         float offset = ((line+1) / 2) / (float)totalSteps;
-        cout << "scan line " << line << " " << dir << " " << offset << endl;
+        //cout << "scan line " << line << " " << dir << " " << offset << endl;
         cv::line(vis, lsdres->leftBnd+dir*offset*perp, lsdres->rightBnd+dir*offset*perp, 3, 0);
         // TODO: bounds checking
         for (int orientation = 0; orientation < 2; orientation++) {
@@ -242,7 +242,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
     highVar = highVar/n2 - highMean*highMean;
 
     double w = scanIt.count / 95.0; // TODO: scanIt vs. fullScanIt slightly different?
-    cout << "w = " << w << endl;
+    //cout << "w = " << w << endl;
 
     float fullWidth = norm(leftBnd-rightBnd);
     float longEnough = (img.rows*img.rows+img.cols*img.cols)/fullWidth;
@@ -258,11 +258,11 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
         highDists[i] = pow(min(**fullScanIt-highMean, 0.0), 2)/(2*var);
     }
 
-    cout << lowMean << " " << lowVar << " " << highMean << " " << highVar << " " << var << endl << endl;
+    //cout << lowMean << " " << lowVar << " " << highMean << " " << highVar << " " << var << endl << endl;
 
     // TODO: tune parameters
     double deltaO = 3*w;
-    //double deltaO = 5*w; // TODO: bounds checking! scan line long enough?
+    // TODO: bounds checking! scan line long enough?
     double deltaW = 2*deltaO/95;
 
     int wmin = w-deltaW;
@@ -270,7 +270,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
     double wClipLeft = w-deltaW-wmin;
     double wClipRight = w+deltaW-(int)(w+deltaW);
 
-    cout << "wClipLeft " << wClipLeft << " wClipRight " << wClipRight << endl;
+    //cout << "wClipLeft " << wClipLeft << " wClipRight " << wClipRight << endl;
     cellPlot.create(800, 1000, CV_8UC3);
 
     MatchResult matchResults[12][2][10];
@@ -362,7 +362,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
                         }
                     }
                 } else {
-                    cout << "full" << endl;
+                    //cout << "full" << endl;
                     for (const auto &cell : leftRightClips[0]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP)) {
@@ -418,15 +418,17 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
         } // for digit
     } // for type
 
+    /*
     for (int pos = 0; pos < 12; pos++) {
         int endType = pos<6 ? 2 : 1;
         for (int type = 0; type < endType; type++) {
             for (int digit = 0; digit < 10; digit++) {
-                //cout << pos << " " << type << " " << digit << " " << matchResults[pos][type][digit] << endl;
+                cout << pos << " " << type << " " << digit << " " << matchResults[pos][type][digit] << endl;
             }
         }
-        //cout << endl;
+        cout << endl;
     }
+    */
 
     double cost[12][2][10];
     int minTypes[11][2][10];
