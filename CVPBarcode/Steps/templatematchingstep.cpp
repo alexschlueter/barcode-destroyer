@@ -271,7 +271,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
     double wClipRight = w+deltaW-(int)(w+deltaW);
 
     //cout << "wClipLeft " << wClipLeft << " wClipRight " << wClipRight << endl;
-    cellPlot.create(800, 1000, CV_8UC3);
+    //cellPlot.create(800, 1000, CV_8UC3);
 
     MatchResult matchResults[12][2][10];
     for (int type = 0; type < 2; type++) {

@@ -18,6 +18,7 @@ void Pipeline::setFinal(Step &step){
 
 void Pipeline::jobsdone(void *result){
     emit completed(*static_cast<QString*>(result));
+    delete static_cast<QString*>(result);
 }
 
 void Pipeline::showImageSlot(const std::string &name, const cv::Mat &mat) {

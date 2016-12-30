@@ -1,5 +1,5 @@
 #include "lsdstep.h"
-#include "utils.h"
+#include "../utils.h"
 #include <iostream>
 
 using namespace std;
@@ -167,6 +167,7 @@ Point LSDStep::maxVariationDifferenceAlongLine(const Point2f &start, const Point
 
 void LSDStep::execute(void *data){
     gray = *static_cast<Mat*>(data);
+    delete static_cast<Mat*>(data);
 
     // use the LineSegmentDetector provided by opencv
     auto lsd = createLineSegmentDetector(LSD_REFINE_ADV); // try other flags
@@ -304,10 +305,10 @@ Point LSDStep::extendBoundWithLines(const Point &bound, const Point2f &dir, floa
         Point2f q((*nextLine)[2], (*nextLine)[3]);
         Point2f center = 0.5*(p+q);
         if (norm(center-lastPos) < allowedDistance) {
-            cout << "lsd extend " << center << " " << lastPos << " " << allowedDistance << endl;
+            //cout << "lsd extend " << center << " " << lastPos << " " << allowedDistance << endl;
             lastPos = center;
         } else {
-            cout << "lsd extend break " << center << " " << lastPos << " " << allowedDistance << endl;
+            //cout << "lsd extend break " << center << " " << lastPos << " " << allowedDistance << endl;
             break;
         }
     }

@@ -3,6 +3,9 @@
 #include "Pipeline/gradientblurpipeline.h"
 #include "Pipeline/lsdpipeline.h"
 #include "aspectratiopixmaplabel.h"
+#include <QScrollBar>
+#include <QTimer>
+#include "utils.h"
 
 #define THREADCOUNT 4
 
@@ -77,9 +80,16 @@ void MainWindow::setupUI(){
 
     //image preview area
     scrollArea = new QScrollArea;
+    scrollWidget = new QWidget;
+    scrollArea->setWidget(scrollWidget);
+    scrollLayout = new QVBoxLayout(scrollWidget);
+    scrollArea->setWidgetResizable(true);
     splitter->addWidget(scrollArea);
-    splitter->setStretchFactor(0, 3);
-    splitter->setStretchFactor(1, 1);
+    // what's wrong with this?
+    //splitter->setStretchFactor(0, 3);
+    //splitter->setStretchFactor(1, 1);
+
+    splitter->setSizes({500, 100});
 
     //stausbar
     stausbar = new QWidget(mainWidget);
@@ -95,7 +105,7 @@ void MainWindow::setupUI(){
     statuslayout->setMargin(0);
 
 
-    connect(pb_clear,SIGNAL(clicked(bool)),this,SLOT(setupTable()));
+    connect(pb_clear,SIGNAL(clicked(bool)),this,SLOT(clear()));
     connect(pb_import,SIGNAL(clicked(bool)),this,SLOT(import()));
     connect(mainTable,SIGNAL(currentCellChanged(int,int,int,int)),this,SLOT(showPreview()));
     connect(this, &MainWindow::previewChanged, this, &MainWindow::showPreview);
@@ -121,11 +131,6 @@ void MainWindow::setupTable(){
     pb_solve_all->setEnabled(false);
     pb_solve_selected->setEnabled(false);
     pb_eval->setEnabled(false);
-    lbl_status->setText("");
-    pb_status->reset();
-    delete scrollWidget;
-    scrollWidget = nullptr;
-    images.clear();
 }
 
 void MainWindow::import(){
@@ -193,7 +198,7 @@ void MainWindow::importFromPath(){
                         lbl_status->setText("Error Reading: " + filep + ".txt");
                         return;
                     }
-                    code = file.readLine(13);
+                    code = file.readLine(14);
                     file.close();
                 } else if(cb_code->currentIndex()==1){
                     code = a.fileName().left(13);
@@ -291,25 +296,15 @@ void MainWindow::showPreview(){
     // repaint doesn't work either
     //mainTable->repaint();
 
-    if (scrollWidget) delete scrollWidget;
-
-    scrollWidget = new QWidget;
-    scrollArea->setWidget(scrollWidget);
-    scrollLayout = new QVBoxLayout(scrollWidget);
-    scrollArea->setWidgetResizable(true);
-    scrollWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-
+    clearLayout(scrollLayout);
     for (const auto &pair : images[cr]) {
 
         QLabel *name = new QLabel(pair.first);
         name->setAlignment(Qt::AlignHCenter);
 
         scrollLayout->addWidget(name);
-        auto img = new AspectRatioPixmapLabel;
-        img->setPixmap(QPixmap::fromImage(pair.second));
-        img->setAlignment(Qt::AlignHCenter);
+        auto img = new AspectRatioPixmapLabel(QPixmap::fromImage(pair.second));
         scrollLayout->addWidget(img, 0, Qt::AlignHCenter);
-        //previews.push_back(prev);
     }
     scrollLayout->addStretch();
 }
@@ -367,6 +362,15 @@ void MainWindow::detectAll(){
 
         //qApp->processEvents();
     }
+}
+
+void MainWindow::clear()
+{
+    clearLayout(scrollLayout);
+    lbl_status->setText("");
+    pb_status->reset();
+    images.clear();
+    setupTable();
 }
 
 void MainWindow::incrementStatus(){

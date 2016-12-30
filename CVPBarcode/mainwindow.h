@@ -93,6 +93,7 @@ private slots:
     void evaluate();
     void detectSingle();
     void detectAll();
+    void clear();
 };
 
 #endif // MAINWINDOW_H

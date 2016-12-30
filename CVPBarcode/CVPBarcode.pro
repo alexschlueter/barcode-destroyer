@@ -51,7 +51,7 @@ HEADERS += \
     Steps/lsdstep.h \
     Steps/templatematchingstep.h \
     aspectratiopixmaplabel.h \
-    Steps/utils.h
+    utils.h
 
 SOURCES += \
     Pipeline/gradientblurpipeline.cpp \
@@ -67,4 +67,4 @@ SOURCES += \
     Steps/lsdstep.cpp \
     Steps/templatematchingstep.cpp \
     aspectratiopixmaplabel.cpp \
-    Steps/utils.cpp
+    utils.cpp
