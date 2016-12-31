@@ -8,5 +8,7 @@
 
 void drawRotatedRect(cv::Mat& img, cv::RotatedRect rect);
 void clearLayout(QLayout* layout, bool deleteWidgets = true);
+cv::Mat rotateImage(cv::Mat img, int angle, int sizeFactor=1);
+
 
 #endif // UTILS_H

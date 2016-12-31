@@ -53,6 +53,10 @@ inline std::ostream &operator<<(std::ostream &os, const MatchResult &mr) {
     return os;
 }
 
+/*
+ * paper "Reading 1-D Barcodes with Mobile Phones Using Deformable Templates"
+ * http://alumni.soe.ucsc.edu/~orazio/barcodes.html
+*/
 class TemplateMatchingStep : public Step
 {
     Q_OBJECT

@@ -28,3 +28,14 @@ void clearLayout(QLayout* layout, bool deleteWidgets)
         delete item;
     }
 }
+
+cv::Mat rotateImage(cv::Mat img, int angle, int sizeFactor)
+{
+    cv::Mat out;
+    cv::Point2i center = cv::Point2i(img.cols / 2, img.rows / 2);
+    cv::Size size(img.cols * sizeFactor, img.rows * sizeFactor);
+
+    cv::Mat rotation_mat = cv::getRotationMatrix2D(center, angle, 1);
+    cv::warpAffine(img, out, rotation_mat, size);
+    return out;
+}

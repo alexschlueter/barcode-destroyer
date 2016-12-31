@@ -23,7 +23,8 @@ win32 {
             -lopencv_core310 \
             -lopencv_highgui310 \
             -lopencv_imgproc310 \
-            -lopencv_imgcodecs310
+            -lopencv_imgcodecs310 \
+            -lopencv_ml310
 
     QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
 }
@@ -35,7 +36,8 @@ unix {
     LIBS += -lopencv_core \
             -lopencv_highgui \
             -lopencv_imgproc \
-            -lopencv_imgcodecs
+            -lopencv_imgcodecs \
+            -lopencv_ml
 }
 
 HEADERS += \
@@ -51,7 +53,14 @@ HEADERS += \
     Steps/lsdstep.h \
     Steps/templatematchingstep.h \
     aspectratiopixmaplabel.h \
-    utils.h
+    utils.h \
+    Steps/neuralhoughstep.h \
+    Steps/neural-hough/HoughTransform.hpp \
+    Steps/neural-hough/mlp_threshold.hpp \
+    Steps/neural-hough/MLP.hpp \
+    Steps/neural-hough/hough_histogram.hpp \
+    Pipeline/neuralhoughpipeline.h \
+    Steps/neural-hough/draw_hist.hpp
 
 SOURCES += \
     Pipeline/gradientblurpipeline.cpp \
@@ -67,4 +76,11 @@ SOURCES += \
     Steps/lsdstep.cpp \
     Steps/templatematchingstep.cpp \
     aspectratiopixmaplabel.cpp \
-    utils.cpp
+    utils.cpp \
+    Steps/neuralhoughstep.cpp \
+    Steps/neural-hough/HoughTransform.cpp \
+    Steps/neural-hough/mlp_threshold.cpp \
+    Steps/neural-hough/MLP.cpp \
+    Steps/neural-hough/hough_histogram.cpp \
+    Pipeline/neuralhoughpipeline.cpp \
+    Steps/neural-hough/draw_hist.cpp

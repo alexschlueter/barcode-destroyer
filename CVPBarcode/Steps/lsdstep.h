@@ -8,6 +8,11 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+/*
+ * paper "Low-Computation Egocentric Barcode Detector for the Blind"
+ * uses LineSegmentDetector provided by opencv-3.*
+ * LineSegmentDetector is described here: http://www.ipol.im/pub/art/2012/gjmr-lsd/
+*/
 class LSDStep : public Step
 {
     Q_OBJECT
