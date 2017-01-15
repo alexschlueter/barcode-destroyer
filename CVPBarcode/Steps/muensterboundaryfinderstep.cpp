@@ -53,7 +53,7 @@ void MuensterBoundaryFinderStep::execute(void *data)
     int numPix = fullBisectIt.count;
 
     int visRows = 800;
-    int visCols = 3000;
+    int visCols = 1800;
     Mat vis(visRows, visCols, CV_8UC3, {255, 255, 255});
     const uchar deltaY = 3;
     vector<pair<int, uchar>> localMinima, localMaxima;
@@ -136,20 +136,20 @@ void MuensterBoundaryFinderStep::execute(void *data)
             if (par == 0) {
                 while (minIt != localMinima.end() && j > minIt->first) ++minIt;
                 while (maxIt != localMaxima.end() && j > maxIt->first) ++maxIt;
-                minCopy = vector<pair<int, uchar>>(minIt, minIt+7);
-                maxCopy = vector<pair<int, uchar>>(maxIt, maxIt+7);
+                minCopy = vector<pair<int, uchar>>(minIt, minIt+min(7l, localMinima.end()-minIt));
+                maxCopy = vector<pair<int, uchar>>(maxIt, maxIt+min(7l, localMaxima.end()-maxIt));
             } else {
-                // TODO: need to reset iterators at start of second phase
                 while (minIt != localMinima.end() && j >= (minIt+1)->first) ++minIt;
                 while (maxIt != localMaxima.end() && j >= (maxIt+1)->first) ++maxIt;
-                minCopy = vector<pair<int, uchar>>(minIt-6, minIt+1);
-                maxCopy = vector<pair<int, uchar>>(maxIt-6, maxIt+1);
+                minCopy = vector<pair<int, uchar>>(minIt-min(6l, minIt-localMinima.begin()), minIt+1);
+                maxCopy = vector<pair<int, uchar>>(maxIt-min(6l, maxIt-localMaxima.begin()), maxIt+1);
             }
             // get the second lowest minimum and the second highest maximum under those 7
             std::nth_element(minCopy.begin(), minCopy.begin()+1, minCopy.end(), [](auto a, auto b) { return a.second > b.second; });
             std::nth_element(maxCopy.begin(), maxCopy.begin()+1, maxCopy.end(), [](auto a, auto b) { return a.second < b.second; });
 
             // their average is the threshold value for the current point on the scanline
+            // TODO: segfault when less than two in vector
             uchar threshold = (minCopy[1].second+maxCopy[1].second)/2;
             binarized.emplace_back(**fullBisectIt >= threshold);
             Point lastPlotPoint{j*(visCols/numPix), visRows-lastThresh*(visRows/255)};
@@ -172,21 +172,36 @@ void MuensterBoundaryFinderStep::execute(void *data)
     auto firstBlack = find(binarized.begin()+jCenter, binarized.end(), false);
     auto curRight = find(firstBlack, binarized.end(), true);
     auto curLeft = find(reverse_iterator<vector<bool>::iterator>(firstBlack), binarized.rend(), true);
+    int maxPairSize;
     // starting from the center black bar, iteratively add white-black pairs to both sides
     // always add the bars on the side on which the new white-black pair is smaller to prevent adding non-barcode areas
     // stop when we have 59 bars (total number of bars in an EAN-13 barcode)
-    for (int pairs = 0; pairs < 29; pairs++) {
+    for (int pairs = 0; curLeft != binarized.rend() || curRight != binarized.end(); pairs++) {
         auto nextRight = find(curRight, binarized.end(), false);
         nextRight = find(nextRight, binarized.end(), true);
 
         auto nextLeft = find(curLeft, binarized.rend(), false);
         nextLeft = find(nextLeft, binarized.rend(), true);
 
-        if (nextRight - curRight < nextLeft - curLeft) {
+        int curPairSize;
+        int distLeft = nextLeft - curLeft;
+        int distRight = nextRight - curRight;
+        if (distLeft == 0 || (distRight != 0 && distRight < distLeft)) {
+            curPairSize = distRight;
+            if (pairs > 0 && curPairSize > 3*maxPairSize) {
+                cout << "break: right pair size too large" << endl;
+                break;
+            }
             curRight = nextRight;
         } else {
+            curPairSize = distLeft;
+            if (pairs > 0 && curPairSize > 3*maxPairSize) {
+                cout << "break: left pair size too large" << endl;
+                break;
+            }
             curLeft = nextLeft;
         }
+        if (pairs == 0 || curPairSize > maxPairSize) maxPairSize = curPairSize;
     }
 
     fullBisectIt = LineIterator(lsdRes->gray, center-longEnough*lineDir, center+longEnough*lineDir);
