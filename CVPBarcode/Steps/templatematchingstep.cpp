@@ -174,14 +174,15 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
     */
 }
 
-void TemplateMatchingStep::execute(void* data){
+void TemplateMatchingStep::execute(void* data) {
     unique_ptr<LocalizationResult> lsdres(static_cast<LocalizationResult*>(data));
     Point perp(lsdres->leftBnd.y - lsdres->rightBnd.y, lsdres->rightBnd.x - lsdres->leftBnd.x);
     perp *= lsdres->height / (2*norm(perp));
     Mat vis = lsdres->img.clone();
 
-    int barcode[13];
-    QString *result = new QString();
+    array<int, 13> barcode;
+
+    vector<array<int, 13>> candidates;
     int totalSteps = numLines / 2 + 1;
     for (int line = 0; line < numLines; line++) {
         int dir = line%2 ? 1 : -1;
@@ -199,21 +200,32 @@ void TemplateMatchingStep::execute(void* data){
                 rightBnd = lsdres->rightBnd+dir*offset*perp;
             }
             if (readBarcodeFromLine(lsdres->img, leftBnd, rightBnd, barcode)) {
-                for (int i = 0; i < 13; i++) {
-                    *result += QString::number(barcode[i]);
-                }
-                emit showImage("scanlines", vis);
-                emit completed((void*)result);
-                return;
+                candidates.push_back(barcode);
             }
         }
     }
     emit showImage("scanlines", vis);
-    *result = "fail";
+    QString *result = new QString();
+    if (candidates.empty()) {
+        *result = "fail";
+    } else {
+        int maxFrequency = 0;
+        array<int, 13> bestCandidate;
+        map<array<int, 13>, int> freqencies;
+        for (auto &&code : candidates) {
+            int f = ++freqencies[code];
+            if (f > maxFrequency) {
+                maxFrequency = f;
+                bestCandidate = code;
+            }
+        }
+        for (int i = 0; i < 13; i++)
+            *result += QString::number(bestCandidate[i]);
+    }
     emit completed((void*)result);
 }
 
-bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, Point2f rightBnd, int barcode[]) {
+bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, Point2f rightBnd, array<int, 13> &barcode) {
     LineIterator scanIt(img, leftBnd, rightBnd);
     vector<uchar> scan(scanIt.count);
 
@@ -507,7 +519,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
     return barcode[0] != -1 && calcCheckDigit(barcode) == barcode[12];
 }
 
-int TemplateMatchingStep::calcCheckDigit(int barcode[])
+int TemplateMatchingStep::calcCheckDigit(array<int, 13> barcode)
 {
     int res = 0;
     for (int i = 0; i < 12; i++) {

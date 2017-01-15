@@ -27,7 +27,7 @@
 
 #include "Pipeline/pipeline.h"
 #include "Pipeline/gradientblurpipeline.h"
-#include "Pipeline/lsdpipeline.h"
+#include "Pipeline/lsdtemplatepipeline.h"
 
 class MainWindow : public QMainWindow
 {

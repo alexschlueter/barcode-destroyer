@@ -49,7 +49,6 @@ HEADERS += \
     Steps/step.h \
     mainwindow.h \
     Steps/gradientblurstep.h \
-    Pipeline/lsdpipeline.h \
     Steps/lsdstep.h \
     Steps/templatematchingstep.h \
     aspectratiopixmaplabel.h \
@@ -60,7 +59,11 @@ HEADERS += \
     Steps/neural-hough/MLP.hpp \
     Steps/neural-hough/hough_histogram.hpp \
     Pipeline/neuralhoughpipeline.h \
-    Steps/neural-hough/draw_hist.hpp
+    Steps/neural-hough/draw_hist.hpp \
+    Steps/variationboundaryfinderstep.h \
+    Steps/muensterboundaryfinderstep.h \
+    Pipeline/lsdtemplatepipeline.h \
+    Pipeline/lsdmuenstertemplatepipeline.h
 
 SOURCES += \
     Pipeline/gradientblurpipeline.cpp \
@@ -72,7 +75,6 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     Steps/gradientblurstep.cpp \
-    Pipeline/lsdpipeline.cpp \
     Steps/lsdstep.cpp \
     Steps/templatematchingstep.cpp \
     aspectratiopixmaplabel.cpp \
@@ -83,4 +85,8 @@ SOURCES += \
     Steps/neural-hough/MLP.cpp \
     Steps/neural-hough/hough_histogram.cpp \
     Pipeline/neuralhoughpipeline.cpp \
-    Steps/neural-hough/draw_hist.cpp
+    Steps/neural-hough/draw_hist.cpp \
+    Steps/variationboundaryfinderstep.cpp \
+    Steps/muensterboundaryfinderstep.cpp \
+    Pipeline/lsdtemplatepipeline.cpp \
+    Pipeline/lsdmuenstertemplatepipeline.cpp

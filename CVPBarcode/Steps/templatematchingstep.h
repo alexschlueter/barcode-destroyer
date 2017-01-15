@@ -62,9 +62,9 @@ class TemplateMatchingStep : public Step
     Q_OBJECT
 public:
     TemplateMatchingStep(QString cellpath);
-    bool readBarcodeFromLine(const cv::Mat &img, cv::Point2f leftBnd, cv::Point2f rightBnd, int barcode[]);
+    bool readBarcodeFromLine(const cv::Mat &img, cv::Point2f leftBnd, cv::Point2f rightBnd, std::array<int, 13> &barcode);
 
-    static int calcCheckDigit(int barcode[12]);
+    static int calcCheckDigit(std::array<int, 13> barcode);
 public slots:
     void execute(void* data);
 
