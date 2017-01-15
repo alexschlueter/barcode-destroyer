@@ -10,19 +10,38 @@ void MuensterBoundaryFinderStep::execute(void *data)
 {
     auto lsdRes = static_cast<LSDResult*>(data);
 
-    Point2f p(lsdRes->bestLine[0], lsdRes->bestLine[1]);
-    Point2f q(lsdRes->bestLine[2], lsdRes->bestLine[3]);
+    // the line ends of the best line
+    Point2f p, q;
+    // Point p is at the top
+    if (lsdRes->bestLine[1] > lsdRes->bestLine[3]) {
+        p = {lsdRes->bestLine[0], lsdRes->bestLine[1]};
+        q = {lsdRes->bestLine[2], lsdRes->bestLine[3]};
+    } else {
+        q = {lsdRes->bestLine[0], lsdRes->bestLine[1]};
+        p = {lsdRes->bestLine[2], lsdRes->bestLine[3]};
+    }
     // vector q -> p
     Point2f vec = p - q;
-    float length = norm(vec);
+    float height = norm(vec);
     // direction perpendicular to the best line, pointing to the right
     Point2f lineDir;
-    if (vec.y < 0) {
-        lineDir = {-vec.y, vec.x};
-    } else {
-        lineDir = {vec.y, -vec.x};
-    }
+    lineDir = {vec.y, -vec.x};
+
     Point2f center = 0.5*(p+q);
+    float longEnough = (lsdRes->gray.rows*lsdRes->gray.rows + lsdRes->gray.cols*lsdRes->gray.cols)/height;
+    Point pt1 = p - longEnough*lineDir;
+    Point pt2 = p + longEnough*lineDir;
+    Point pt3 = q - longEnough*lineDir;
+    Point pt4 = q + longEnough*lineDir;
+    clipLine({lsdRes->gray.cols, lsdRes->gray.rows}, pt1, pt2);
+    clipLine({lsdRes->gray.cols, lsdRes->gray.rows}, pt3, pt4);
+    float newLenLeft = min(norm((Point2f)pt1-p), norm((Point2f)pt3-q));
+    float newLenRight = min(norm((Point2f)pt2-p), norm((Point2f)pt4-q));
+    Mat crop;
+    Mat trafo = getAffineTransform(vector<Point2f>{p, q, p-newLenLeft*lineDir/height}, vector<Point2f>{{newLenLeft, height}, {newLenLeft, 0}, {0, height}});
+    warpAffine(lsdRes->gray, crop, trafo, {(int)(newLenLeft+newLenRight), (int)height});
+    showImage("crop", crop);
+
 
     // TODO: smooth the scanline
 
@@ -30,7 +49,6 @@ void MuensterBoundaryFinderStep::execute(void *data)
     // we want the line to go through the whole image, so we need to give the constructor a point which lies
     // in the correct direction, but outside the image boundary
     // opencv will then clip the line to the image
-    float longEnough = (lsdRes->gray.rows*lsdRes->gray.rows + lsdRes->gray.cols*lsdRes->gray.cols)/length;
     LineIterator fullBisectIt(lsdRes->gray, center-longEnough*lineDir, center+longEnough*lineDir);
     int numPix = fullBisectIt.count;
 
@@ -185,6 +203,6 @@ void MuensterBoundaryFinderStep::execute(void *data)
     line(vis, {j*(visCols/numPix), 0}, {j*(visCols/numPix), visRows-1}, {0, 0, 255}, 1);
     emit showImage("Muenster Boundaries", vis);
 
-    auto res = new LocalizationResult(lsdRes->gray, move(leftBoundary), move(rightBoundary), length);
+    auto res = new LocalizationResult(lsdRes->gray, move(leftBoundary), move(rightBoundary), height);
     emit completed((void*)res);
 }
