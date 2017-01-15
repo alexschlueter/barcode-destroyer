@@ -10,7 +10,7 @@ AspectRatioPixmapLabel::AspectRatioPixmapLabel(const QPixmap &pixmap, QWidget *p
     this->setSizePolicy(policy);
 }
 
-int AspectRatioPixmapLabel::heightForWidth(int width ) const
+int AspectRatioPixmapLabel::heightForWidth(int width) const
 {
     if (width > pixmap()->width()) {
         return pixmap()->height();

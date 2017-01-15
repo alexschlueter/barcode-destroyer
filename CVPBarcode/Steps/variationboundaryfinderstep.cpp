@@ -29,6 +29,8 @@ Point VariationBoundaryFinderStep::maxVariationDifferenceAlongLine(const Mat &im
     std::vector<int> vars;
     vars.reserve(fullBisectIt.count);
     Point2f maxPos;
+    int visRows = 600, visCols = 1800;
+    Mat vis(visRows, visCols, CV_8UC3, {255, 255, 255});
     // create Rect of the same size as the image for simple bound checking with Rect::contains
     Rect imgRect(Point(), img.size());
 
@@ -117,7 +119,7 @@ Point VariationBoundaryFinderStep::maxVariationDifferenceAlongLine(const Mat &im
     for (; firstMaxIdx > 0; firstMaxIdx--) ++fullBisectIt;
     return fullBisectIt.pos();
 
-
+    //emit showImage("VarAlongLine", vis);
     return maxPos;
 }
 

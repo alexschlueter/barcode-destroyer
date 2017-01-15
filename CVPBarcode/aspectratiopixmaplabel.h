@@ -3,7 +3,6 @@
 
 #include <QLabel>
 #include <QPixmap>
-#include <QResizeEvent>
 
 class AspectRatioPixmapLabel : public QLabel
 {
@@ -14,8 +13,6 @@ public:
     virtual bool hasHeightForWidth() { return true; }
     virtual QSize sizeHint() const { return pixmap()->size(); }
     virtual QSize minimumSizeHint() const { return QSize(0, 0); }
-private:
-    QPixmap pix;
 };
 
 #endif // ASPECTRATIOPIXMAPLABEL_H

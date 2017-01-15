@@ -54,7 +54,9 @@ void LSDStep::execute(void *data){
     delete static_cast<Mat*>(data);
 
     // use the LineSegmentDetector provided by opencv
-    auto lsd = createLineSegmentDetector(LSD_REFINE_ADV); // try other flags
+    //auto lsd = createLineSegmentDetector(LSD_REFINE_NONE, 0.8, 1.2); // try other flags
+    // no refinement is better, because refinement breaks up barcode lines if they are not quite straight
+    auto lsd = createLineSegmentDetector(LSD_REFINE_NONE);
     std::vector<Vec4f> lines;
     lsd->detect(gray, lines);
 

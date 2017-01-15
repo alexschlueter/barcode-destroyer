@@ -4,7 +4,6 @@
 #include "Pipeline/lsdtemplatepipeline.h"
 #include "aspectratiopixmaplabel.h"
 #include <QScrollBar>
-#include <QTimer>
 #include "utils.h"
 
 #define THREADCOUNT 4
@@ -134,6 +133,8 @@ void MainWindow::setupTable(){
 }
 
 void MainWindow::import(){
+    pb_openPath->setEnabled(true);
+    pb_startimport->setEnabled(true);
     importW->show();
     importW->raise();
     importW->activateWindow();
@@ -183,6 +184,8 @@ void MainWindow::explorePath(){
 
 void MainWindow::importFromPath(){
     if(le_path->text().isEmpty()) return;
+    pb_openPath->setEnabled(false);
+    pb_startimport->setEnabled(false);
     int count = 0;
     QString path = le_path->text();
     if(cb_type->currentIndex()==0){
@@ -196,6 +199,8 @@ void MainWindow::importFromPath(){
                     QFile file(filep+".txt");
                     if(!file.open(QIODevice::ReadOnly)){
                         lbl_status->setText("Error Reading: " + filep + ".txt");
+                        pb_openPath->setEnabled(true);
+                        pb_startimport->setEnabled(true);
                         return;
                     }
                     code = file.readLine(14);
@@ -214,6 +219,8 @@ void MainWindow::importFromPath(){
             QFile file(path+".txt");
             if(!file.open(QIODevice::ReadOnly)){
                 lbl_status->setText("Error Reading: " + path + ".txt");
+                pb_openPath->setEnabled(true);
+                pb_startimport->setEnabled(true);
                 return;
             }
 
