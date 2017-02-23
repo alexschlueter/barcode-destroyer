@@ -24,7 +24,7 @@ namespace artelab
 
     void MLP::load(std::string file) 
     {
-        _model = cv::ml::ANN_MLP::load(file.c_str());
+        _model = cv::ml::ANN_MLP::load<cv::ml::ANN_MLP>(file.c_str());
     }
 
     void MLP::save(std::string file) 
