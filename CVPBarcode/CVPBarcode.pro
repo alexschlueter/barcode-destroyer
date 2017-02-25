@@ -31,7 +31,7 @@ win32 {
 
 unix {
 
-    QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas -Wno-unused-variable -Wno-reorder -Wno-maybe-uninitialized
+    QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-but-set-variable -Wno-reorder -Wno-maybe-uninitialized
 
     LIBS += -lopencv_core \
             -lopencv_highgui \
@@ -63,7 +63,9 @@ HEADERS += \
     Steps/variationboundaryfinderstep.h \
     Steps/muensterboundaryfinderstep.h \
     Pipeline/lsdtemplatepipeline.h \
-    Pipeline/lsdmuenstertemplatepipeline.h
+    Pipeline/lsdmuenstertemplatepipeline.h \
+    Pipeline/lsdlinebndtemplatepipeline.h \
+    Steps/lsdboundaryfinderstep.h
 
 SOURCES += \
     Pipeline/gradientblurpipeline.cpp \
@@ -89,4 +91,6 @@ SOURCES += \
     Steps/variationboundaryfinderstep.cpp \
     Steps/muensterboundaryfinderstep.cpp \
     Pipeline/lsdtemplatepipeline.cpp \
-    Pipeline/lsdmuenstertemplatepipeline.cpp
+    Pipeline/lsdmuenstertemplatepipeline.cpp \
+    Pipeline/lsdlinebndtemplatepipeline.cpp \
+    Steps/lsdboundaryfinderstep.cpp

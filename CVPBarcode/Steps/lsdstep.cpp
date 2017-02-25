@@ -36,7 +36,7 @@ bool LSDStep::linesMaybeInSameBarcode(const Vec4f &line1, const Vec4f &line2)
     angleDist = std::min(angleDist, std::abs(180-angleDist));
 
     // length difference, relative to the length of the first line
-    float relLengthDiff = (length1-length2)/length1;
+    float relLengthDiff = std::abs(length1-length2)/length1;
 
     // Two lines with same angle, length and close centers might still not be placed next
     // to each other like lines in a barcode.
@@ -46,7 +46,17 @@ bool LSDStep::linesMaybeInSameBarcode(const Vec4f &line1, const Vec4f &line2)
     float relProjCenterDiff = (center2-center1).dot(vec1) / (length1*length1);
 
     // check if the lines probably belong to the same barcode
-    return angleDist < angleTol && std::abs(relLengthDiff) < lengthTol && std::abs(relProjCenterDiff) < projCenterTol;
+    //return angleDist < angleTol && relLengthDiff < lengthTol && std::abs(relProjCenterDiff) < projCenterTol;
+
+    float proj1 = (p2-q1).dot(vec1)/length1;
+    float proj2 = (q2-q1).dot(vec1)/length1;
+    float minProj = max(0.0f, min(proj1, proj2));
+    float maxProj = min(length1, max(proj1, proj2));
+    float relProjIntersection = (maxProj - minProj) / min(length1, length2);
+    //float relProjIntersection = (maxProj - minProj) / length1;
+
+
+    return angleDist < angleTol && relProjIntersection > 0.7;
 }
 
 void LSDStep::execute(void *data){
@@ -68,7 +78,7 @@ void LSDStep::execute(void *data){
     // we're trying to find a line segment which lies approximately in the middle of the barcode
     // we assign points to each line based on how many other lines are approximately
     // parallel, have similar length and are not too far away
-    std::vector<int> scores(lines.size());
+    std::vector<double> scores(lines.size());
     auto scoreIt = scores.begin();
     for (auto &&line : lines) {
         // calculate score for this line
@@ -86,13 +96,19 @@ void LSDStep::execute(void *data){
             Point2f p2(line2[0], line2[1]);
             Point2f q2(line2[2], line2[3]);
             Point2f center2 = 0.5*(p2+q2);
+            // vector q2 -> p2
+            Point2f vec2 = p2 - q2;
+            float length2 = norm(vec2);
             // center distance, relative to the length of the first line
             float relCenterDist = norm(center1-center2) / length1;
+            // length difference, relative to the length of the first line
+            float relLengthDiff = std::abs(length1-length2)/length1;
 
-            if (std::abs(relCenterDist) < centerDistTol && linesMaybeInSameBarcode(line, line2)) {
+            if (relCenterDist < centerDistTol && relLengthDiff < lengthTol && linesMaybeInSameBarcode(line, line2)) {
                 // increase the score of line 1
                 // we could probably just increase the score of line 2 at this point and save half of the loop steps
-                ++(*scoreIt);
+                *scoreIt += 1 - relCenterDist/centerDistTol;
+                //*scoreIt += length1*centerDistTol - norm(center1-center2);
             }
         }
         ++scoreIt;
@@ -101,7 +117,7 @@ void LSDStep::execute(void *data){
     // the line with the best score hopefully lies in the middle of the barcode
     auto maxScoreIt = std::max_element(scores.begin(), scores.end());
     const auto &bestLine = *(lines.begin() + std::distance(scores.begin(), maxScoreIt));
-    cout << "max score " << *maxScoreIt << endl;
+    //cout << "max score " << *maxScoreIt << endl;
 
     // this section is just for the visualization of the line scores in the result image
     Mat onlyLines(gray.size(), CV_8U, Scalar(0));

@@ -377,6 +377,8 @@ void MainWindow::clear()
     lbl_status->setText("");
     pb_status->reset();
     images.clear();
+    // might have used a lot of RAM, so we better deallocate here
+    images.shrink_to_fit();
     setupTable();
 }
 

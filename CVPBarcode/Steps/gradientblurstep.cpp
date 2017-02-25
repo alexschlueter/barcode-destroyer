@@ -43,7 +43,7 @@ void GradientBlurStep::execute(void *data){
 
     if (contours.empty()) {
         std::cout << "GradientBlurStep: no contours found" << std::endl;
-        res = new LocalizationResult(*static_cast<cv::Mat*>(data), {0, image.rows/2}, {image.cols-1, image.rows/2}, image.rows);
+        res = new LocalizationResult(*static_cast<cv::Mat*>(data), {{0, image.rows/2}}, {{image.cols-1, image.rows/2}}, image.rows);
     } else {
         std::sort( contours.begin(), contours.end(), compareContourAreas );
 
@@ -71,7 +71,7 @@ void GradientBlurStep::execute(void *data){
             rightBoundary = 0.5f*(points[1]+points[2]);
         }
 
-        res = new LocalizationResult(*static_cast<cv::Mat*>(data), leftBoundary, rightBoundary, height);
+        res = new LocalizationResult(*static_cast<cv::Mat*>(data), {leftBoundary}, {rightBoundary}, height);
     }
     delete static_cast<cv::Mat*>(data);
     emit completed((void*)res);

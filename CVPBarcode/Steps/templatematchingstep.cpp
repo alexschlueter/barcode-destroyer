@@ -176,40 +176,45 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 
 void TemplateMatchingStep::execute(void* data) {
     unique_ptr<LocalizationResult> lsdres(static_cast<LocalizationResult*>(data));
-    Point perp(lsdres->leftBnd.y - lsdres->rightBnd.y, lsdres->rightBnd.x - lsdres->leftBnd.x);
-    perp *= lsdres->height / (2*norm(perp));
-    Mat vis = lsdres->img.clone();
+    vector<pair<array<int, 13>, double>> candidates;
+    for (const auto &leftBnd : lsdres->leftBnds) {
+        for (const auto &rightBnd : lsdres->rightBnds) {
+            Point perp(leftBnd.y - rightBnd.y, rightBnd.x - leftBnd.x);
+            perp *= lsdres->height / (2*norm(perp));
+            Mat vis = lsdres->img.clone();
 
-    array<int, 13> barcode;
+            array<int, 13> barcode;
 
-    vector<array<int, 13>> candidates;
-    int totalSteps = numLines / 2 + 1;
-    for (int line = 0; line < numLines; line++) {
-        int dir = line%2 ? 1 : -1;
-        float offset = ((line+1) / 2) / (float)totalSteps;
-        //cout << "scan line " << line << " " << dir << " " << offset << endl;
-        cv::line(vis, lsdres->leftBnd+dir*offset*perp, lsdres->rightBnd+dir*offset*perp, 3, 0);
-        // TODO: bounds checking
-        for (int orientation = 0; orientation < 2; orientation++) {
-            Point2f leftBnd, rightBnd;
-            if (orientation) {
-                rightBnd = lsdres->leftBnd+dir*offset*perp;
-                leftBnd = lsdres->rightBnd+dir*offset*perp;
-            } else {
-                leftBnd = lsdres->leftBnd+dir*offset*perp;
-                rightBnd = lsdres->rightBnd+dir*offset*perp;
-            }
-            if (readBarcodeFromLine(lsdres->img, leftBnd, rightBnd, barcode)) {
-                candidates.push_back(barcode);
+            int totalSteps = numLines / 2 + 1;
+            for (int line = 0; line < numLines; line++) {
+                int dir = line%2 ? 1 : -1;
+                float offset = ((line+1) / 2) / (float)totalSteps;
+                //cout << "scan line " << line << " " << dir << " " << offset << endl;
+                //cv::line(vis, lsdres->leftBnd+dir*offset*perp, lsdres->rightBnd+dir*offset*perp, 3, 0);
+                // TODO: bounds checking
+                for (int orientation = 0; orientation < 2; orientation++) {
+                    Point2f leftBndOffs, rightBndOffs;
+                    if (orientation) {
+                        rightBndOffs = leftBnd+dir*offset*perp;
+                        leftBndOffs = rightBnd+dir*offset*perp;
+                    } else {
+                        leftBndOffs = leftBnd+dir*offset*perp;
+                        rightBndOffs = rightBnd+dir*offset*perp;
+                    }
+                    double cost = readBarcodeFromLine(lsdres->img, leftBndOffs, rightBndOffs, barcode);
+                    if (cost > -1) {
+                        candidates.push_back(make_pair(barcode, cost));
+                    }
+                }
             }
         }
     }
-    emit showImage("scanlines", vis);
+    //emit showImage("scanlines", vis);
     QString *result = new QString();
     if (candidates.empty()) {
         *result = "fail";
     } else {
-        int maxFrequency = 0;
+        /*int maxFrequency = 0;
         array<int, 13> bestCandidate;
         map<array<int, 13>, int> freqencies;
         for (auto &&code : candidates) {
@@ -219,13 +224,16 @@ void TemplateMatchingStep::execute(void* data) {
                 bestCandidate = code;
             }
         }
+        */
+        // TODO: when the same numbers are read multiple times, combine costs somehow
+        auto bestCandidate = min_element(candidates.begin(), candidates.end(), [](auto &a, auto &b) { return a.second < b.second; })->first;
         for (int i = 0; i < 13; i++)
             *result += QString::number(bestCandidate[i]);
     }
     emit completed((void*)result);
 }
 
-bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, Point2f rightBnd, array<int, 13> &barcode) {
+double TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, Point2f rightBnd, array<int, 13> &barcode) {
     LineIterator scanIt(img, leftBnd, rightBnd);
     vector<uchar> scan(scanIt.count);
 
@@ -330,7 +338,7 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
                 double oClipBottom = o-deltaO-omin;
 
                 if (wmin == wmax-1 && omin == omax-1) {
-                    cout << "one section" << endl;
+                    //cout << "one section" << endl;
                     for (const auto &cell : leftRightClips[0]) {
                         Cell newCell(cell);
                         if (newCell.clip(oClipTop, ClipDirection::TOP) && newCell.clip(oClipBottom, ClipDirection::BOTTOM)) {
@@ -491,7 +499,18 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
             minDigit = digit;
         }
     }
-    if (minDigit == -1) return false; // TODO: all costs +inf?? not good
+    //cout << "minCost = " << minCost << endl;
+    if (minDigit == -1) return -1; // TODO: all costs +inf?? not good
+
+    int visRows = 200;
+    int visCols = 700;
+    spatialConsistency = Mat(visRows, visCols, CV_8UC3, {255, 255, 255});
+    float xIncr = (visCols - 20) / float(scanIt.count);
+    float yIncr = (visRows - 20) / 12.0f;
+    //rectangle(vis, {10+11*(visCols-20)/12.0, 10+11*(visRows-20)/12.0}, {10+12*(visCols-20)/12.0, 10+12*(visRows-20)/12.0})
+    rectangle(spatialConsistency, {int(10+xIncr*(matchResults[11][0][minDigit].woEstimate.y - oStart)), visRows-10},
+        {int(10+xIncr*(matchResults[11][0][minDigit].woEstimate.y+7*matchResults[11][0][minDigit].woEstimate.x - oStart)), int(visRows-10-yIncr)}, {255, 0, 0}, CV_FILLED);
+    putText(spatialConsistency, to_string(minDigit), {int(10+xIncr*(matchResults[11][0][minDigit].woEstimate.y+2*matchResults[11][0][minDigit].woEstimate.x - oStart)), int(visRows-10-yIncr)}, FONT_HERSHEY_PLAIN, 1, 0);
 
     int types[12];
     barcode[12] = minDigit;
@@ -499,6 +518,10 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
     for (int pos = 10; pos >= 0; pos--) {
         barcode[pos+1] = minDigits[pos][types[pos+1]][barcode[pos+2]];
         types[pos] = minTypes[pos][types[pos+1]][barcode[pos+2]];
+        const auto &woEst = matchResults[pos][types[pos]][barcode[pos+1]].woEstimate;
+        rectangle(spatialConsistency, {int(10+xIncr*(woEst.y - oStart)), int(visRows-10-(11-pos)*yIncr)},
+            {int(10+xIncr*(woEst.y+7*woEst.x - oStart)), int(visRows-10-(12-pos)*yIncr)}, {255, 0, 0}, CV_FILLED);
+        putText(spatialConsistency, to_string(barcode[pos+1]), {int(10+xIncr*(woEst.y+2*woEst.x - oStart)), int(visRows-10-(12-pos)*yIncr)}, FONT_HERSHEY_PLAIN, 1, 0);
     }
 
     barcode[0] = -1;
@@ -515,8 +538,8 @@ bool TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f leftBnd, 
             break;
         }
     }
-
-    return barcode[0] != -1 && calcCheckDigit(barcode) == barcode[12];
+    //emit showImage("spatial consistency", spatialConsistency);
+    return (barcode[0] != -1 && calcCheckDigit(barcode) == barcode[12]) ? minCost : -1;
 }
 
 int TemplateMatchingStep::calcCheckDigit(array<int, 13> barcode)

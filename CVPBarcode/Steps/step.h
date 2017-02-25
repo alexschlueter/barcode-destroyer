@@ -26,11 +26,11 @@ signals:
 
 struct LocalizationResult {
     cv::Mat img;
-    cv::Point leftBnd;
-    cv::Point rightBnd;
+    std::vector<cv::Point> leftBnds;
+    std::vector<cv::Point> rightBnds;
     float height;
 
-    LocalizationResult(cv::Mat _img, cv::Point _leftBnd, cv::Point _rightBnd, float _height) : img(_img), leftBnd(_leftBnd), rightBnd(_rightBnd), height(_height) {}
+    LocalizationResult(cv::Mat _img, std::vector<cv::Point> _leftBnds, std::vector<cv::Point> _rightBnds, float _height) : img(_img), leftBnds(_leftBnds), rightBnds(_rightBnds), height(_height) {}
 };
 
 #endif // STEP_H

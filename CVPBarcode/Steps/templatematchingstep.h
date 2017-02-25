@@ -62,7 +62,7 @@ class TemplateMatchingStep : public Step
     Q_OBJECT
 public:
     TemplateMatchingStep(QString cellpath);
-    bool readBarcodeFromLine(const cv::Mat &img, cv::Point2f leftBnd, cv::Point2f rightBnd, std::array<int, 13> &barcode);
+    double readBarcodeFromLine(const cv::Mat &img, cv::Point2f leftBnd, cv::Point2f rightBnd, std::array<int, 13> &barcode);
 
     static int calcCheckDigit(std::array<int, 13> barcode);
 public slots:
@@ -70,12 +70,14 @@ public slots:
 
 private:
     const double alpha = 0.1;
+    //const double alpha = 10; // too high
     const int numLines = 7;
 
     static const int patterns[][4];
     static const int firstDigitPatterns[][6];
     std::vector<Cell> cellsPerDigit[2][10];
     cv::Mat cellPlot;
+    cv::Mat spatialConsistency;
     cv::RNG rng;
 
     MatchResult calcIntegralsOverCell(const Cell &cell, int iw, int io, int type, int digit, const std::vector<double> &lowDists, const std::vector<double> &highDists);

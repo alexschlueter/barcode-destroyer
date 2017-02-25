@@ -16,12 +16,6 @@ public:
 
 public slots:
     void execute(void* data);
-private:
-    static const std::array<float, 5> scanOffsets;
-
-    cv::Point maxVariationDifferenceAlongLine(const cv::Mat &img, const cv::Point2f &start, const cv::Point2f &dir);
-    template <class LineIt>
-    static cv::Point extendBoundWithLines(const cv::Point &bound, const cv::Point2f &dir, float allowedDistance, LineIt linesBegin, LineIt linesEnd);
 };
 
 #endif // VARIATIONBOUNDARYFINDERSTEPSTEP_H
