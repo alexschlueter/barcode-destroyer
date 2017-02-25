@@ -268,6 +268,7 @@ bool MainWindow::resultIsCorrect(int row, const QString &result)
     return getTableText(row,1) == result.left(getTableText(row,1).length());
 }
 
+
 void MainWindow::updateRowWithResult(int row, const QString &result)
 {
     setTableText(row, 2, result);
@@ -320,12 +321,17 @@ void MainWindow::evaluate(){
     int sum = mainTable->rowCount();
     if(sum==0) return;
     int error = 0;
+    int points = 0;
     for(int i = 0; i<sum; i++){
         if(!resultIsCorrect(i, getTableText(i, 2))) error++;
+        if(resultIsCorrect(i, getTableText(i,2)))
+            points++;
+        else if(getTableText(i,2)!="fail")
+            points--;
     }
     QString result = "Total: " + QString::number(sum) + "\tCorrect: "
             + QString::number(sum-error) + "\tErrors: " + QString::number(error)
-            + "\tErrorrate:" + QString::number((error*100)/sum) +"%";
+            + "\tErrorrate: " + QString::number((error*100)/sum) +"%\t\tPoints: " + QString::number(points);
     lbl_status->setText(result);
 }
 
