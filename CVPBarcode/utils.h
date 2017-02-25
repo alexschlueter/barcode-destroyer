@@ -16,5 +16,10 @@ IT safeIncr(const IT &it, const IT &end, typename IT::difference_type i)
 {
     return it + std::min(i, end-it);
 }
+template <class IT>
+IT safeDecr(const IT &it, const IT &begin, typename IT::difference_type i)
+{
+    return it - std::min(i, it-begin);
+}
 
 #endif // UTILS_H

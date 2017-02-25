@@ -12,10 +12,9 @@ TARGET = CVPBarcode
 TEMPLATE = app
 CONFIG += c++14
 
-win32 {
-    # Windows Compiler Flags
+QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-but-set-variable -Wno-reorder -Wno-maybe-uninitialized
 
-    QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas
+win32 {
 
     INCLUDEPATH += C:/openCV31/include
 
@@ -25,13 +24,9 @@ win32 {
             -lopencv_imgproc310 \
             -lopencv_imgcodecs310 \
             -lopencv_ml310
-
-    QMAKE_CXXFLAGS_WARN_ON = -Wno-unused-variable -Wno-reorder
 }
 
 unix {
-
-    QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-but-set-variable -Wno-reorder -Wno-maybe-uninitialized
 
     LIBS += -lopencv_core \
             -lopencv_highgui \
