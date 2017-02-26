@@ -55,6 +55,7 @@ private:
     QPushButton * pb_solve_selected;
     QPushButton * pb_solve_all;
     QPushButton * pb_eval;
+    QPushButton * pb_save_selected;
     QComboBox * cb_pipelines;
 
     QComboBox * cb_type;
@@ -93,6 +94,7 @@ private slots:
     void evaluate();
     void detectSingle();
     void detectAll();
+    void saveSelected();
     void clear();
 };
 

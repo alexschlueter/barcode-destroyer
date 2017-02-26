@@ -64,6 +64,8 @@ void MainWindow::setupUI(){
         settings.setValue("pipeline", text);
     });
     menulayout->addWidget(cb_pipelines);
+    pb_save_selected = new QPushButton("Save selected images");
+    menulayout->addWidget(pb_save_selected);
 
     splitter = new QSplitter;
     splitter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
@@ -111,6 +113,7 @@ void MainWindow::setupUI(){
     connect(pb_eval,SIGNAL(clicked(bool)),this,SLOT(evaluate()));
     connect(pb_solve_selected,SIGNAL(clicked(bool)),this,SLOT(detectSingle()));
     connect(pb_solve_all,SIGNAL(clicked(bool)),this,SLOT(detectAll()));
+    connect(pb_save_selected,SIGNAL(clicked(bool)),this,SLOT(saveSelected()));
 }
 
 void MainWindow::setupTable(){
@@ -374,6 +377,15 @@ void MainWindow::detectAll(){
         QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
 
         //qApp->processEvents();
+    }
+}
+
+void MainWindow::saveSelected() {
+    int currentRow = mainTable->currentRow();
+    QString originalFileName = getTableText( currentRow, 0 );
+    for (const std::pair<QString, QImage> &pair : images[currentRow]) {
+        QString newFileName = originalFileName + "_" + pair.first + ".jpg";
+        pair.second.save( newFileName );
     }
 }
 
