@@ -14,6 +14,8 @@ upc = [(0, [3, 2, 1, 1]),
        (7, [1, 3, 1, 2]),
        (8, [1, 2, 1, 3]),
        (9, [3, 1, 1, 2])]
+# upc = [('guard', [1, 1, 1]),
+#        ('mid', [1, 1, 1, 1, 1])]
 eps = 1e-6
 
 def feq(p1, p2):
@@ -104,7 +106,7 @@ def updateCells(cells):
             newcells += [(cell, [])]
     return newcells
 
-colors = ['r', 'b', 'g', 'm', 'c']
+colors = ['r', 'b', 'g', 'm', 'c', 'y', 'k']
 for d,rs in upc:
     rs = list(reversed(rs))
     print(rs)
@@ -147,7 +149,7 @@ for d,rs in upc:
     cellres = []
     j = 0
     outf = open(str(d)+'.dat', 'w')
-    outf.write('nr, area, centx, centy, pix0, pix1, pix2, pix3, pix4, pix5, vertex1x, vertex1y, vertex2x, ...\n')
+    outf.write('nr, area, centroidx, centroidy, numBars, pixPerBar0, ..., pixPerBarN, vertex1x, vertex1y, vertex2x, ...\n')
     for cell,_ in cells:
         mx = 0
         my = 0
@@ -181,7 +183,7 @@ for d,rs in upc:
         plt.plot([centx], [centy], 'x')
         plt.annotate('{:.4f}\n'.format(area)+str(pixoffs), xy=(centx, centy))
         cellres += [(cell, area, pixoffs)]
-        outf.write(str(j) + ', ' + str(area) + ', ' + str(centx) + ', ' + str(centy) + ', ')
+        outf.write(str(j) + ', ' + str(area) + ', ' + str(centx) + ', ' + str(centy) + ', ' + str(len(pixoffs)) + ', ')
         for p in pixoffs:
             outf.write(str(p) + ', ')
         for v in cell[:-1]:

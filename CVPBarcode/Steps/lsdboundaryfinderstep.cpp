@@ -31,7 +31,7 @@ void LSDBoundaryFinderStep::execute(void *data)
 
     Point2f center = 0.5*(p+q);
 
-
+    // TODO: filter very short lines
     lsdRes->lines.erase(remove_if(lsdRes->lines.begin(), lsdRes->lines.end(), [&](const auto &line) { return !LSDStep::linesMaybeInSameBarcode(lsdRes->bestLine, line); }), lsdRes->lines.end());
     Mat lineVis;
     //Mat onlyLines(lsdRes->gray.size(), CV_8U, Scalar(0));

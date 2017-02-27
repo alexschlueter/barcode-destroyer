@@ -4,6 +4,8 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
 
 #include <QLayout>
 
@@ -15,6 +17,14 @@ template <class IT>
 IT safeIncr(const IT &it, const IT &end, typename IT::difference_type i)
 {
     return it + std::min(i, end-it);
+}
+
+template <typename T>
+std::string to_string_with_precision(const T a_value, const int n = 3)
+{
+    std::ostringstream out;
+    out << std::setprecision(n) << a_value;
+    return out.str();
 }
 
 #endif // UTILS_H
