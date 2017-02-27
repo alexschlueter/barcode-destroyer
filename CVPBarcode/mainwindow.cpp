@@ -64,6 +64,8 @@ void MainWindow::setupUI(){
         settings.setValue("pipeline", text);
     });
     menulayout->addWidget(cb_pipelines);
+    pb_save_selected = new QPushButton("Save selected images");
+    menulayout->addWidget(pb_save_selected);
 
     splitter = new QSplitter;
     splitter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
@@ -111,6 +113,7 @@ void MainWindow::setupUI(){
     connect(pb_eval,SIGNAL(clicked(bool)),this,SLOT(evaluate()));
     connect(pb_solve_selected,SIGNAL(clicked(bool)),this,SLOT(detectSingle()));
     connect(pb_solve_all,SIGNAL(clicked(bool)),this,SLOT(detectAll()));
+    connect(pb_save_selected,SIGNAL(clicked(bool)),this,SLOT(saveSelected()));
 }
 
 void MainWindow::setupTable(){
@@ -268,6 +271,7 @@ bool MainWindow::resultIsCorrect(int row, const QString &result)
     return getTableText(row,1) == result.left(getTableText(row,1).length());
 }
 
+
 void MainWindow::updateRowWithResult(int row, const QString &result)
 {
     setTableText(row, 2, result);
@@ -320,12 +324,17 @@ void MainWindow::evaluate(){
     int sum = mainTable->rowCount();
     if(sum==0) return;
     int error = 0;
+    int points = 0;
     for(int i = 0; i<sum; i++){
         if(!resultIsCorrect(i, getTableText(i, 2))) error++;
+        if(resultIsCorrect(i, getTableText(i,2)))
+            points++;
+        else if(getTableText(i,2)!="fail")
+            points--;
     }
     QString result = "Total: " + QString::number(sum) + "\tCorrect: "
             + QString::number(sum-error) + "\tErrors: " + QString::number(error)
-            + "\tErrorrate:" + QString::number((error*100)/sum) +"%";
+            + "\tErrorrate: " + QString::number((error*100)/sum) +"%\t\tPoints: " + QString::number(points);
     lbl_status->setText(result);
 }
 
@@ -368,6 +377,15 @@ void MainWindow::detectAll(){
         QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
 
         //qApp->processEvents();
+    }
+}
+
+void MainWindow::saveSelected() {
+    int currentRow = mainTable->currentRow();
+    QString originalFileName = getTableText( currentRow, 0 );
+    for (const std::pair<QString, QImage> &pair : images[currentRow]) {
+        QString newFileName = originalFileName + "_" + pair.first + ".jpg";
+        pair.second.save( newFileName );
     }
 }
 

@@ -18,6 +18,11 @@ IT safeIncr(const IT &it, const IT &end, typename IT::difference_type i)
 {
     return it + std::min(i, end-it);
 }
+template <class IT>
+IT safeDecr(const IT &it, const IT &begin, typename IT::difference_type i)
+{
+    return it - std::min(i, it-begin);
+}
 
 template <typename T>
 std::string to_string_with_precision(const T a_value, const int n = 3)

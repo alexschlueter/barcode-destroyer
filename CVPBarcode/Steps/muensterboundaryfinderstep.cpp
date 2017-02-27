@@ -1,5 +1,6 @@
 #include "muensterboundaryfinderstep.h"
 #include "lsdstep.h"
+#include "utils.h"
 
 #include <iostream>
 
@@ -131,8 +132,10 @@ void MuensterBoundaryFinderStep::execute(void *data)
         if (j < newLenLeft) {
             while (minIt != localMinima.end() && j > minIt->first) ++minIt;
             while (maxIt != localMaxima.end() && j > maxIt->first) ++maxIt;
-            minCopy = vector<pair<int, uchar>>(minIt, minIt+min(7l, localMinima.end()-minIt));
-            maxCopy = vector<pair<int, uchar>>(maxIt, maxIt+min(7l, localMaxima.end()-maxIt));
+            //minCopy = vector<pair<int, uchar>>(minIt, minIt+min(7l, localMinima.end()-minIt));
+            //maxCopy = vector<pair<int, uchar>>(maxIt, maxIt+min(7l, localMaxima.end()-maxIt));
+            minCopy = vector<pair<int, uchar>>(minIt, safeIncr(minIt, localMinima.end(), 7));
+            maxCopy = vector<pair<int, uchar>>(maxIt, safeIncr(maxIt, localMaxima.end(), 7));
         } else {
             if (j == newLenLeft) {
                 --maxIt;
@@ -142,8 +145,10 @@ void MuensterBoundaryFinderStep::execute(void *data)
             }
             while (minIt != localMinima.end() && j >= (minIt+1)->first) ++minIt;
             while (maxIt != localMaxima.end() && j >= (maxIt+1)->first) ++maxIt;
-            minCopy = vector<pair<int, uchar>>(minIt-min(6l, minIt-localMinima.begin()), minIt+1);
-            maxCopy = vector<pair<int, uchar>>(maxIt-min(6l, maxIt-localMaxima.begin()), maxIt+1);
+            //minCopy = vector<pair<int, uchar>>(minIt-min(6l, minIt-localMinima.begin()), minIt+1);
+            //maxCopy = vector<pair<int, uchar>>(maxIt-min(6l, maxIt-localMaxima.begin()), maxIt+1);
+            minCopy = vector<pair<int, uchar>>(safeDecr(minIt, localMinima.begin(), 6), minIt+1);
+            maxCopy = vector<pair<int, uchar>>(safeDecr(maxIt, localMaxima.begin(), 6), maxIt+1);
         }
         // get the second lowest minimum and the second highest maximum under those 7
         std::nth_element(minCopy.begin(), minCopy.begin()+1, minCopy.end(), [](auto a, auto b) { return a.second > b.second; });
