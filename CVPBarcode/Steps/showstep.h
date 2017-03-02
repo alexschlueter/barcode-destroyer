@@ -1,7 +1,7 @@
 #ifndef SHOWSTEP_H
 #define SHOWSTEP_H
 
-#include "Steps/step.h"
+#include "../Steps/step.h"
 #include <QString>
 
 #include "opencv2/core/core.hpp"

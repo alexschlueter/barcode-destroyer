@@ -6,7 +6,7 @@
 #ifndef TEMPLATEMATCHINGSTEP_H
 #define TEMPLATEMATCHINGSTEP_H
 
-#include "Steps/step.h"
+#include "../Steps/step.h"
 #include "QString"
 #include <ostream>
 

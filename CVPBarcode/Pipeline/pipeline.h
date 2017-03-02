@@ -1,7 +1,7 @@
 #ifndef PIPELINE_H
 #define PIPELINE_H
 
-#include "Steps/step.h"
+#include "../Steps/step.h"
 #include <iostream>
 #include <QObject>
 #include <QThread>

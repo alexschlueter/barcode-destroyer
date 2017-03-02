@@ -1,10 +1,10 @@
 #include "lsdtemplatepipeline.h"
-#include "Steps/templatematchingstep.h"
-#include "Steps/loaderstep.h"
-#include "Steps/showstep.h"
-#include "Steps/readerstep.h"
-#include "Steps/lsdstep.h"
-#include "Steps/variationboundaryfinderstep.h"
+#include "../Steps/templatematchingstep.h"
+#include "../Steps/loaderstep.h"
+#include "../Steps/showstep.h"
+#include "../Steps/readerstep.h"
+#include "../Steps/lsdstep.h"
+#include "../Steps/variationboundaryfinderstep.h"
 
 void LSDTemplatePipeline::execute(void* data){
     QString path = *static_cast<QString*>(data);

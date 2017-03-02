@@ -1,7 +1,7 @@
 #ifndef VARIATIONBOUNDARYFINDERSTEPSTEP_H
 #define VARIATIONBOUNDARYFINDERSTEPSTEP_H
 
-#include "Steps/step.h"
+#include "../Steps/step.h"
 #include <QString>
 
 #include "opencv2/core/core.hpp"

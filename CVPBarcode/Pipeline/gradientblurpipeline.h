@@ -1,12 +1,12 @@
 #ifndef GRADIENTBLURPIPELINE_H
 #define GRADIENTBLURPIPELINE_H
 
-#include "Pipeline/pipeline.h"
+#include "../Pipeline/pipeline.h"
 
-#include "Steps/loaderstep.h"
-#include "Steps/showstep.h"
-#include "Steps/readerstep.h"
-#include "Steps/gradientblurstep.h"
+#include "../Steps/loaderstep.h"
+#include "../Steps/showstep.h"
+#include "../Steps/readerstep.h"
+#include "../Steps/gradientblurstep.h"
 
 #include <QString>
 

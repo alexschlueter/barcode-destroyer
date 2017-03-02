@@ -1,11 +1,11 @@
 #ifndef NEURALHOUGHPIPELINE_H
 #define NEURALHOUGHPIPELINE_H
 
-#include "Pipeline/pipeline.h"
+#include "../Pipeline/pipeline.h"
 
-#include "Steps/loaderstep.h"
-#include "Steps/readerstep.h"
-#include "Steps/neuralhoughstep.h"
+#include "../Steps/loaderstep.h"
+#include "../Steps/readerstep.h"
+#include "../Steps/neuralhoughstep.h"
 
 #include <QString>
 

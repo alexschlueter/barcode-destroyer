@@ -1,7 +1,7 @@
 #ifndef LSDLINEBNDTEMPLATEPIPELINE_H
 #define LSDLINEBNDTEMPLATEPIPELINE_H
 
-#include "Pipeline/pipeline.h"
+#include "../Pipeline/pipeline.h"
 #include <QString>
 
 class LSDLineBndTemplatePipeline : public Pipeline

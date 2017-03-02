@@ -1,9 +1,9 @@
 #include "neuralhoughpipeline.h"
 
-#include "Steps/loaderstep.h"
-#include "Steps/readerstep.h"
-#include "Steps/lsdstep.h"
-#include "Steps/neuralhoughstep.h"
+#include "../Steps/loaderstep.h"
+#include "../Steps/readerstep.h"
+#include "../Steps/lsdstep.h"
+#include "../Steps/neuralhoughstep.h"
 
 void NeuralHoughPipeline::execute(void* data){
     QString path = *static_cast<QString*>(data);

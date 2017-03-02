@@ -1,6 +1,6 @@
 #include "muensterboundaryfinderstep.h"
 #include "lsdstep.h"
-#include "utils.h"
+#include "../utils.h"
 
 #include <iostream>
 

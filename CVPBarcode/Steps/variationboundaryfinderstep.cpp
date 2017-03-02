@@ -1,6 +1,6 @@
 #include "variationboundaryfinderstep.h"
 #include "lsdstep.h"
-#include "utils.h"
+#include "../utils.h"
 
 using namespace std;
 using namespace cv;

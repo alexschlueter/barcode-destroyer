@@ -1,6 +1,6 @@
 #include "templatematchingstep.h"
 #include "lsdstep.h"
-#include "utils.h"
+#include "../utils.h"
 
 #include <QDirIterator>
 #include <QDebug>
