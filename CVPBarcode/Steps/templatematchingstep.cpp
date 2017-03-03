@@ -75,6 +75,7 @@ bool Cell::clip(double clipCoord, ClipDirection dir)
     if (nv < 3) return false;
     vertices = move(newVerts);
 
+    // update area and centroid
     area = 0;
     centroid = {0, 0};
     for (int i = 0; i < nv; i++) {
@@ -155,22 +156,27 @@ vector<Cell> TemplateMatchingStep::readCellsFromFile(QString filepath) {
 
 TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 {
-    guardCells = readCellsFromFile(cellpath + "/guard.dat");
-    midCells = readCellsFromFile(cellpath + "/mid.dat");
-
-    QDirIterator itA(cellpath + "/A"), itB(cellpath + "/B");
-    QDirIterator *it;
     for (int type = 0; type < 2; type++) {
-        if (type == 0) it = &itA;
-        else it = &itB;
+        QString typeFolder;
+        if (type == 0) typeFolder = "/A";
+        else typeFolder = "/B";
 
-        while (it->hasNext()) {
-            QString filep = it->next();
-            if (filep.right(4).toLower() == ".dat") {
-                int digit = filep.mid(filep.length()-5, 1).toInt();
-                cellsPerDigit[type][digit] = readCellsFromFile(filep);
+        for (int extension = 0; extension < 3; extension++) {
+            QString folder(typeFolder);
+            if (extension == 0) folder += "/left";
+            else if (extension == 1) folder += "/mid";
+            else folder += "/right";
+
+
+            QDirIterator it(cellpath + folder);
+            while (it.hasNext()) {
+                QString filep = it.next();
+                if (filep.right(4).toLower() == ".dat") {
+                    int digit = filep.mid(filep.length()-5, 1).toInt();
+                    cellsPerDigit[type][extension][digit] = readCellsFromFile(filep);
+                }
+
             }
-
         }
     }
 
@@ -188,7 +194,8 @@ TemplateMatchingStep::TemplateMatchingStep(QString cellpath)  : rng(13432123)
 
 void TemplateMatchingStep::execute(void* data) {
     unique_ptr<LocalizationResult> locRes(static_cast<LocalizationResult*>(data));
-    vector<ReadingResult> candidates;
+    map<array<int, 13>, vector<ReadingResult>> candidates;
+    int numCandidates = 0;
     for (const auto &leftBnd : locRes->leftBnds) {
         for (const auto &rightBnd : locRes->rightBnds) {
             Point perp(leftBnd.y - rightBnd.y, rightBnd.x - leftBnd.x);
@@ -197,7 +204,7 @@ void TemplateMatchingStep::execute(void* data) {
 
             //array<int, 13> barcode;
 
-            int totalSteps = numLines / 2 + 1;
+            int totalSteps = numLines / 2;
             for (int line = 0; line < numLines; line++) {
                 int dir = line%2 ? 1 : -1;
                 float offset = ((line+1) / 2) / (float)totalSteps;
@@ -215,7 +222,13 @@ void TemplateMatchingStep::execute(void* data) {
                     }
                     auto readRes = readBarcodeFromLine(locRes->img, leftBndOffs, rightBndOffs);
                     if (readRes.state == ReadingResult::SUCCESS) {
-                        candidates.emplace_back(move(readRes));
+                        numCandidates++;
+                        auto candIt = candidates.find(readRes.barcode);
+                        if (candIt != candidates.end()) {
+                            candIt->second.emplace_back(move(readRes));
+                        } else {
+                            candidates.emplace(readRes.barcode, vector<ReadingResult>{{readRes}});
+                        }
                     }
                 }
             }
@@ -237,17 +250,35 @@ void TemplateMatchingStep::execute(void* data) {
             }
         }
         */
-        // TODO: when the same numbers are read multiple times, combine costs somehow
-        const auto &bestCandidate = *min_element(candidates.begin(), candidates.end(), [](auto &a, auto &b) { return a.cost < b.cost; });
+
+        auto bestCandidate = candidates.begin()->second.begin();
+        double minCost = numeric_limits<double>::max();
+        for (auto candIt = candidates.begin(); candIt != candidates.end(); ++candIt) {
+            auto bestRead = min_element(candIt->second.begin(), candIt->second.end(), [](auto &a, auto &b) { return a.cost < b.cost; });
+            double weightedCost = (numCandidates - candIt->second.size())*bestRead->cost; // try to take into account that we are more certain of a result if it has been read multiple times
+            if (weightedCost < minCost) {
+                minCost = weightedCost;
+                bestCandidate = bestRead;
+            }
+        }
+
+        for (int i = 0; i < 13; i++)
+            *result += QString::number(bestCandidate->barcode[i]);
 
         int visRows = 400;
         int visCols = 1200;
         Mat vis(visRows, visCols, CV_8UC3, {255, 255, 255});
-        bestCandidate.draw(vis);
+        bestCandidate->draw(vis);
         emit showImage("Template Matching", vis);
+
+        // TODO: when the same numbers are read multiple times, combine costs somehow
+        /*const auto &bestCandidate = *min_element(candidates.begin(), candidates.end(), [](auto &a, auto &b) { return a.cost < b.cost; });
+
+
 
         for (int i = 0; i < 13; i++)
             *result += QString::number(bestCandidate.barcode[i]);
+        */
     }
     emit completed((void*)result);
 }
@@ -418,15 +449,16 @@ ReadingResult TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f 
     float fullWidth = norm(leftBnd-rightBnd);
     float longEnough = (img.rows*img.rows+img.cols*img.cols)/fullWidth;
     LineIterator fullScanIt(img, leftBnd+longEnough*(leftBnd-rightBnd), rightBnd+longEnough*(rightBnd-leftBnd));
-    array<vector<double>, 2> dists = {vector<double>(fullScanIt.count), vector<double>(fullScanIt.count)};
+    //array<vector<double>, 2> dists = {vector<double>(fullScanIt.count), vector<double>(fullScanIt.count)};
+    readRes.dists = {vector<double>(fullScanIt.count), vector<double>(fullScanIt.count)};
 
     readRes.oStart = -1;
     for (int i = 0; i < fullScanIt.count; i++, ++fullScanIt) {
         if (readRes.oStart == -1 && norm((Point2f)fullScanIt.pos()-rightBnd) <= fullWidth) {
             readRes.oStart = i;
         }
-        dists[0][i] = pow(max(**fullScanIt-readRes.levels[0], 0.0), 2)/(2*var);
-        dists[1][i] = pow(min(**fullScanIt-readRes.levels[1], 0.0), 2)/(2*var);
+        readRes.dists[0][i] = pow(max(**fullScanIt-readRes.levels[0], 0.0), 2)/(2*var);
+        readRes.dists[1][i] = pow(min(**fullScanIt-readRes.levels[1], 0.0), 2)/(2*var);
     }
 
     //cout << readRes.levels[0] << " " << lowVar << " " << readRes.levels[1] << " " << highVar << " " << var << endl << endl;
@@ -446,40 +478,43 @@ ReadingResult TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f 
     //cellPlot.create(800, 1000, CV_8UC3);
 
     vector<Cell> leftOrBothClips, maybeRightClips;
-    array<vector<Cell>*, 3> guardClips({&guardCells, &leftOrBothClips, &maybeRightClips});
-    prepareLeftRightClips(wSameSection, wClipLeft, wClipRight, guardClips);
-    readRes.matchResults[0] = matchTemplate(readRes.oStart, w, wmin, wmax, Pattern(Pattern::GUARD), guardClips, dists);
-    readRes.matchResults[14] = matchTemplate(readRes.oStart+92*w, w, wmin, wmax, Pattern(Pattern::GUARD), guardClips, dists);
-
-    array<vector<Cell>*, 3> midClips({&midCells, &leftOrBothClips, &maybeRightClips});
-    prepareLeftRightClips(wSameSection, wClipLeft, wClipRight, midClips);
-    readRes.matchResults[7] = matchTemplate(readRes.oStart+45*w, deltaO, wmin, wmax, Pattern(Pattern::MID), midClips, dists);
-
     array<vector<MatchResult>, 12> matchResults;
-    for (int type = 0; type < 2; type++) {
-        for (int digit = 0; digit < 10; digit++) {
-            array<vector<Cell>*, 3> clips({&cellsPerDigit[type][digit], &leftOrBothClips, &maybeRightClips});
-            prepareLeftRightClips(wSameSection, wClipLeft, wClipRight, clips);
+    vector<int> positions;
+    for (int type = 0; type < 2; type++) {  // 0 -> {A, C}, 1 -> B
+        for (int extension = 0; extension < 3; extension++) { // left, mid, right
+            for (int digit = 0; digit < 10; digit++) {
+                array<vector<Cell>*, 3> clips({&cellsPerDigit[type][extension][digit], &leftOrBothClips, &maybeRightClips});
+                prepareLeftRightClips(wSameSection, wClipLeft, wClipRight, clips);
 
-            int totalPos = type==1 ? 6 : 12;
-            for (int pos = 0; pos < totalPos; pos++) {
-
-                double o = readRes.oStart + 3*w + pos*7*w;
-                Pattern pattern;
-                if (pos < 6) {
-                    if (type == 0) pattern = Pattern(Pattern::A, digit);
-                    else pattern = Pattern(Pattern::B, digit);
+                if (type == 0) {
+                    if (extension == 0) positions = {0, 6};
+                    else if (extension == 1) positions = {1,2,3,4,7,8,9,10};
+                    else if (extension == 2) positions = {5,11};
                 } else {
-                    o += 5*w;
-                    pattern = Pattern(Pattern::C, digit);
+                    if (extension == 0) positions = {0};
+                    else if (extension == 1) positions = {1,2,3,4};
+                    else if (extension == 2) positions = {5};
                 }
-                //matchResults[pos][type][digit] = matchTemplate(o, deltaO, wmin, wmax, pattern, clips, dists);
-                matchResults[pos].emplace_back(matchTemplate(o, deltaO, wmin, wmax, pattern, clips, dists));
 
-                //imshow("cell plot", cellPlot);
-                //cin.ignore();
-            } // for pos
-        } // for digit
+                for (int pos : positions) {
+
+                    double o = readRes.oStart + pos*7*w;
+                    if (extension != 0) o += 3*w;
+                    Pattern pattern;
+                    if (pos < 6) {
+                        if (type == 0) pattern = Pattern(Pattern::A, Pattern::Extension(extension), digit);
+                        else pattern = Pattern(Pattern::B, Pattern::Extension(extension), digit);
+                    } else {
+                        o += 5*w;
+                        pattern = Pattern(Pattern::C, Pattern::Extension(extension), digit);
+                    }
+                    matchResults[pos].emplace_back(matchTemplate(o, deltaO, wmin, wmax, pattern, clips, readRes.dists));
+
+                    //imshow("cell plot", cellPlot);
+                    //cin.ignore();
+                } // for pos
+            } // for digit
+        } // for extension
     } // for type
 
     /*
@@ -494,63 +529,50 @@ ReadingResult TemplateMatchingStep::readBarcodeFromLine(const Mat &img, Point2f 
     }
     */
 
+
     // dynamic programming
-    for (int startPos : {0, 6}) {
-        array<vector<double>, 6> costs;
-        array<vector<double>, 7> consistencyCosts;
-        array<vector<int>, 5> dpPointers;
+    array<vector<double>, 12> costs;
+    array<vector<double>, 11> consistencyCosts;
+    array<vector<int>, 11> dpPointers;
 
-        const auto &leftGuardMR = readRes.matchResults[startPos==0 ? 0 : 7];
-        const auto &rightGuardMR = readRes.matchResults[startPos==0 ? 7 : 14];
-        double leftGuardCost = -log(leftGuardMR.likelihood);
-        double rightGuardCost = -log(rightGuardMR.likelihood);
-        for (const auto &mr : matchResults[startPos]) {
-            double consistencyCost = alpha*pow(leftGuardMR.spatialInconsistency(mr), 2);
-            consistencyCosts.front().emplace_back(consistencyCost);
-            costs.front().emplace_back(leftGuardCost + consistencyCost - log(mr.likelihood));
-        }
+    for (const auto &mr : matchResults.front()) {
+        costs.front().emplace_back(-log(mr.likelihood));
+    }
 
-        for (int pos = 1; pos < 6; pos++) {
-            const auto &prevPosResults = matchResults[startPos+pos-1];
-            for (auto &mr : matchResults[startPos+pos]) {
-                double thisCost = -log(mr.likelihood);
-                if (pos == 5) {
-                    double rightConsistencyCost = alpha*pow(mr.spatialInconsistency(rightGuardMR), 2);
-                    thisCost += rightConsistencyCost + rightGuardCost;
-                    consistencyCosts.back().emplace_back(rightConsistencyCost);
+    for (int pos = 1; pos < 12; pos++) {
+        const auto &prevPosResults = matchResults[pos-1];
+        for (auto &mr : matchResults[pos]) {
+            double thisCost = -log(mr.likelihood);
+            double minCost = numeric_limits<double>::max();
+            double consistencyCost;
+            auto minMRIt = prevPosResults.begin();
+            auto costsIt = costs[pos-1].begin();
+            for (auto mr2It = prevPosResults.begin(); mr2It != prevPosResults.end(); ++mr2It, ++costsIt) {
+                double thisConsistencyCost = alpha*pow(mr2It->spatialInconsistency(mr), 2);
+                double combinedCost = *costsIt + thisCost + thisConsistencyCost;
+                if (combinedCost < minCost) {
+                    minCost = combinedCost;
+                    consistencyCost = thisConsistencyCost;
+                    minMRIt = mr2It;
                 }
-                double minCost = numeric_limits<double>::max();
-                double consistencyCost;
-                auto minMRIt = prevPosResults.begin();
-                auto costsIt = costs[pos-1].begin();
-                for (auto mr2It = prevPosResults.begin(); mr2It != prevPosResults.end(); ++mr2It, ++costsIt) {
-                    double thisConsistencyCost = alpha*pow(mr2It->spatialInconsistency(mr), 2);
-                    double combinedCost = *costsIt + thisCost + thisConsistencyCost;
-                    if (combinedCost < minCost) {
-                        minCost = combinedCost;
-                        consistencyCost = thisConsistencyCost;
-                        minMRIt = mr2It;
-                    }
-                }
-                costs[pos].emplace_back(minCost);
-                consistencyCosts[pos].emplace_back(consistencyCost);
-                dpPointers[pos-1].emplace_back(minMRIt - prevPosResults.begin());
             }
+            costs[pos].emplace_back(minCost);
+            consistencyCosts[pos-1].emplace_back(consistencyCost);
+            dpPointers[pos-1].emplace_back(minMRIt - prevPosResults.begin());
         }
+    }
 
-        int endPos = startPos+5;
-        auto optCostIt = min_element(costs.back().begin(), costs.back().end());
-        readRes.cost += *optCostIt;
-        int optIdx = optCostIt-costs.back().begin();
-        readRes.digitMR(endPos) = matchResults[endPos][optIdx];
-        readRes.consistencyCostAfterPos(endPos) = consistencyCosts.back()[optIdx];
-        readRes.consistencyCostBeforePos(endPos) = consistencyCosts[5][optIdx];
+    auto optCostIt = min_element(costs.back().begin(), costs.back().end());
+    readRes.cost = *optCostIt;
+    int optIdx = optCostIt-costs.back().begin();
+    readRes.digitMR(11) = matchResults[11][optIdx];
+    readRes.consistencyCostBeforePos(11) = consistencyCosts[10][optIdx];
 
-        for (int pos = 4; pos >= 0; pos--) {
-            optIdx = dpPointers[pos][optIdx];
-            readRes.digitMR(startPos+pos) = matchResults[startPos+pos][optIdx];
-            readRes.consistencyCostBeforePos(startPos+pos) = consistencyCosts[pos][optIdx];
-        }
+    for (int pos = 10; pos >= 0; pos--) {
+        optIdx = dpPointers[pos][optIdx];
+        readRes.digitMR(pos) = matchResults[pos][optIdx];
+        if (pos != 0)
+            readRes.consistencyCostBeforePos(pos) = consistencyCosts[pos-1][optIdx];
     }
 
     readRes.update();
@@ -582,7 +604,7 @@ MatchResult TemplateMatchingStep::calcIntegralsOverCell(const Cell &cell, int iw
 
     bool nextWhite = pattern.firstWhite();
     offset++;
-    for (int bar = 0; bar < pattern.size(); bar++) {
+    for (int bar = 0; bar < pattern.numBars(); bar++) {
         totalPixInBar = iw*pattern[bar] + cell.pixelsPerBar[1+bar];
         for (int ibar = 0; ibar < totalPixInBar; ibar++) {
             cost += dists[nextWhite][offset+ibar];
@@ -607,9 +629,9 @@ void MatchResult::draw(Mat &img, int oStart, int xScale, const array<double, 2> 
     putText(img, to_string_with_precision(-log(likelihood)), Point((woEstimate.y-oStart)*scale, 20), FONT_HERSHEY_PLAIN, 1, 0);
     int iw = 0;
     bool nextWhite = pattern.firstWhite();
-    for (int i = 0; i < pattern.size(); i++) {
+    for (int i = 0; i < pattern.numBars(); i++) {
         line(img, Point((woEstimate.y+iw*woEstimate.x-oStart)*scale, img.rows*(1-levels[nextWhite]/255)), Point((woEstimate.y+(iw+pattern[i])*woEstimate.x-oStart)*scale, img.rows*(1-levels[nextWhite]/255)), color);
-        if (i != pattern.size()-1)
+        if (i != pattern.numBars()-1)
             line(img, Point((woEstimate.y+(iw+pattern[i])*woEstimate.x-oStart)*scale, img.rows*(1-levels[nextWhite]/255)), Point((woEstimate.y+(iw+pattern[i])*woEstimate.x-oStart)*scale, img.rows*(1-levels[!nextWhite]/255)), color);
         iw += pattern[i];
         nextWhite = ! nextWhite;
@@ -654,7 +676,7 @@ void ReadingResult::draw(Mat &img) const
     Scalar colors[] = {{255, 0, 0}, {0, 0, 255}};
     for (const auto &mr : matchResults) mr.draw(img, oStart, scanLine.size(), levels, colors[c++%2]);
     for (size_t i = 0; i < consistencyCosts.size(); i++)
-        putText(img, to_string_with_precision(consistencyCosts[i]), Point((matchResults[i+1].woEstimate.y-oStart)*img.cols/float(scanLine.size()), 30), FONT_HERSHEY_PLAIN, 1, 0);
+        putText(img, to_string_with_precision(consistencyCosts[i]), Point((matchResults[i+1].woEstimate.y-oStart)*img.cols/float(scanLine.size())-10, 30), FONT_HERSHEY_PLAIN, 1, 0);
 
     putText(img, "total cost="+to_string_with_precision(cost), Point(0, img.rows-1), FONT_HERSHEY_PLAIN, 1, 0);
 }
