@@ -33,7 +33,6 @@ HEADERS += \
     ../Steps/readerstep.h \
     ../Steps/showstep.h \
     ../Steps/step.h \
-    ../mainwindow.h \
     ../Steps/gradientblurstep.h \
     ../Steps/lsdstep.h \
     ../Steps/templatematchingstep.h \
@@ -60,8 +59,6 @@ SOURCES += \
     ../Steps/readerstep.cpp \
     ../Steps/showstep.cpp \
     ../Steps/step.cpp \
-    ../main.cpp \
-    ../mainwindow.cpp \
     ../Steps/gradientblurstep.cpp \
     ../Steps/lsdstep.cpp \
     ../Steps/templatematchingstep.cpp \
