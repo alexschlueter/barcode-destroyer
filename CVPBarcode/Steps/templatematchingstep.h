@@ -147,7 +147,7 @@ struct ReadingResult {
     double cost;
 
     ReadingResult(cv::Point2f _leftBnd, cv::Point2f _rightBnd, std::vector<uchar> _scanLine)
-        : leftBnd(std::move(_leftBnd)), rightBnd(std::move(_rightBnd)), scanLine(std::move(_scanLine)), levels({}), cost(0) {}
+        : leftBnd(std::move(_leftBnd)), rightBnd(std::move(_rightBnd)), scanLine(std::move(_scanLine)), levels({{}}), cost(0) {}
 
     MatchResult &digitMR(int pos) { return matchResults[pos < 6 ? pos+1 : pos+2]; }
     double &consistencyCostBeforePos(int pos) { return consistencyCosts[pos < 6 ? pos : pos+1]; }
