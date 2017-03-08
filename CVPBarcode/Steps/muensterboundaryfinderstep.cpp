@@ -97,8 +97,8 @@ void MuensterBoundaryFinderStep::execute(void *data)
     auto minAvg = std::accumulate(minCopy.begin(), minCopy.begin()+minCopy.size()/2, 0, [](auto a, auto b) { return a + b.second; }) * 2.0 / minCopy.size();
     auto maxAvg = std::accumulate(maxCopy.begin(), maxCopy.begin()+maxCopy.size()/2, 0, [](auto a, auto b) { return a + b.second; }) * 2.0 / maxCopy.size();
 
-    cout << "before pruning " << localMinima.size() << " " << localMaxima.size() << endl;
-    cout << "minAvg " << (int)minAvg << ", maxAvg " << (int)maxAvg << endl;
+    //cout << "before pruning " << localMinima.size() << " " << localMaxima.size() << endl;
+    //cout << "minAvg " << (int)minAvg << ", maxAvg " << (int)maxAvg << endl;
 
     // prune unusually dark maxima / unusually light minima
     Point rect(3, 3);
@@ -118,7 +118,7 @@ void MuensterBoundaryFinderStep::execute(void *data)
         } else ++it;
     }
 
-    cout << "after pruning: " << localMinima.size() << " " << localMaxima.size() << endl;
+    //cout << "after pruning: " << localMinima.size() << " " << localMaxima.size() << endl;
 
     // binarize scanline
     vector<bool> binarized;
@@ -186,14 +186,14 @@ void MuensterBoundaryFinderStep::execute(void *data)
         if (distLeft == 0 || (distRight != 0 && distRight < distLeft)) {
             curPairSize = distRight;
             if (pairs > 29 || (pairs > 0 && curPairSize > 3*maxPairSize)) {
-                cout << "break: right pair size too large" << endl;
+                //cout << "break: right pair size too large" << endl;
                 break;
             }
             curRight = nextRight;
         } else {
             curPairSize = distLeft;
             if (pairs > 29 || (pairs > 0 && curPairSize > 3*maxPairSize)) {
-                cout << "break: left pair size too large" << endl;
+                //cout << "break: left pair size too large" << endl;
                 break;
             }
             curLeft = nextLeft;
@@ -204,7 +204,7 @@ void MuensterBoundaryFinderStep::execute(void *data)
     Mat trafoInv;
     invertAffineTransform(trafo, trafoInv);
     vector<Point2f> transBnds;
-    cout << "pre trafo bnds " << binarized.rend()-curLeft << " " << curRight-binarized.begin() << endl;
+    //cout << "pre trafo bnds " << binarized.rend()-curLeft << " " << curRight-binarized.begin() << endl;
     cv::transform(vector<Point2f>{{float(binarized.rend()-curLeft), height/2}, {float(curRight-binarized.begin()), height/2}}, transBnds, trafoInv);
 
     j = binarized.rend() - curLeft;
