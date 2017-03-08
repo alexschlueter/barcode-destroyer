@@ -1,15 +1,18 @@
 #include "solutionfilewriter.h"
+#include <QDebug>
 
-solutionFileWriter::solutionFileWriter(QObject *parent, QString inputFile, QString outputFile) : QObject(parent)
+solutionFileWriter::solutionFileWriter(QString inputFile, QString outputFile) : QObject()
 {
     auto pipe = getPipelines()[ "LSD + LSDBound + TemplateMatching" ]->create( inputFile );
     connect( pipe, &Pipeline::completed, this, [this, pipe, outputFile]( QString result ){
 
         std::ofstream outfile ( outputFile.toStdString() );
-        outfile << result.toStdString() << std::endl;
+        if(result!="fail")
+            outfile << result.toStdString() << std::endl;
         outfile.close();
 
         pipe->deleteLater();
     });
-    QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
+    pipe->start();
+
 }

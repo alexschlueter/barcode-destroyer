@@ -32,5 +32,18 @@ struct LocalizationResult {
 
     LocalizationResult(cv::Mat _img, std::vector<cv::Point> _leftBnds, std::vector<cv::Point> _rightBnds, float _height) : img(_img), leftBnds(_leftBnds), rightBnds(_rightBnds), height(_height) {}
 };
+struct BarcodeError : std::exception
+{
+    char text[1000];
+
+    BarcodeError(char const* fmt, ...) __attribute__((format(printf,2,3))) {
+        va_list ap;
+        va_start(ap, fmt);
+        vsnprintf(text, sizeof text, fmt, ap);
+        va_end(ap);
+    }
+
+    char const* what() const throw() { return text; }
+};
 
 #endif // STEP_H

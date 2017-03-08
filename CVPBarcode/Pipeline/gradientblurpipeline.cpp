@@ -6,7 +6,7 @@ void GradientBlurPipeline::execute(void* data){
 
     LoaderStep loader; //use this to provide some parameters
     GradientBlurStep gb;
-    TemplateMatchingStep reader("../cells");
+    TemplateMatchingStep reader(":/cells");
 
     connectSteps(loader,gb);
     connectSteps(gb,reader);

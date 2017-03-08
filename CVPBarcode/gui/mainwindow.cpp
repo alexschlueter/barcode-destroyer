@@ -1,10 +1,4 @@
 #include "mainwindow.h"
-#include "Pipeline/pipeline.h"
-#include "Pipeline/gradientblurpipeline.h"
-#include "Pipeline/lsdtemplatepipeline.h"
-#include "aspectratiopixmaplabel.h"
-#include <QScrollBar>
-#include "utils.h"
 
 #define THREADCOUNT 4
 
@@ -15,7 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupTable();
     setupImport();
     this->showMaximized();
-    for(int i = 0; i<THREADCOUNT;i++){
+    for(int i = 0; i<THREADCOUNT+1;i++){
         threads.append(new QThread);
         threads[i]->start();
     }
@@ -23,10 +17,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    for(int i = 0; i<THREADCOUNT; i++){
+    for(int i = 0; i<THREADCOUNT+1; i++){
         threads[i]->quit();
     }
-    for(int i = 0; i<THREADCOUNT; i++){
+    for(int i = 0; i<THREADCOUNT+1; i++){
         threads[i]->wait(100);
     }
 }
@@ -250,7 +244,7 @@ void MainWindow::includeFile(QString filepath,QString name, QString code){
     setTableText(rowcount,0,name);
     setTableText(rowcount,3,filepath);
     setTableText(rowcount,1,code);
-    images.push_back({{"Original", QImage(filepath)}});
+    images.push_back({{"Original", QImage(filepath).scaledToWidth(500)}});
 }
 
 void MainWindow::setTableText(int r, int c, QString t){
@@ -306,6 +300,7 @@ void MainWindow::showPreview(){
     // the highlight color doesn't change
     // repaint doesn't work either
     //mainTable->repaint();
+    //qApp->processEvents();
 
     clearLayout(scrollLayout);
     for (const auto &pair : images[cr]) {
@@ -343,7 +338,7 @@ void MainWindow::detectSingle(){
     if(cr>=0){
         images[cr].resize(1);
         auto pipe = getPipelines()[cb_pipelines->currentText()]->create(getTableText(cr,3));
-        pipe->moveToThread(threads[0]);
+        pipe->moveToThread(threads[THREADCOUNT]);
         connect(pipe, &Pipeline::showImage, this, [this, cr](QString name, QImage img) {
             if (images.size() <= (uint)cr) return;
             images[cr].push_back({name, img});
@@ -359,25 +354,30 @@ void MainWindow::detectSingle(){
 
 void MainWindow::detectAll(){
     uint max = mainTable->rowCount();
-    pb_status->setRange(1,max);
+    pb_status->setRange(0,max);
+    pb_status->setValue(0);
+    pb_solve_all->setEnabled(false);
+    all_restart();
     for(uint i = 0; i<max; i++){
         images[i].resize(1);
         auto pipe = getPipelines()[cb_pipelines->currentText()]->create(getTableText(i,3));
         pipe->moveToThread(threads[i%THREADCOUNT]);
-        connect(pipe, &Pipeline::showImage, this, [this, i](QString name, QImage img) {
-            if (images.size() <= i) return;
-            images[i].push_back({name, img});
-            if (mainTable->currentRow() == (int)i) emit previewChanged();
-        });
+        //connect(pipe, &Pipeline::showImage, this, [this, i](QString name, QImage img) {
+        //    if (images.size() <= i) return;
+        //    images[i].push_back({name, img});
+        //    if (mainTable->currentRow() == (int)i) emit previewChanged();
+        //});
         connect(pipe, &Pipeline::completed, this, [this,pipe,i](QString result){
             updateRowWithResult(i, result);
             incrementStatus();
             pipe->deleteLater();
         });
         QMetaObject::invokeMethod(pipe,"start",Qt::QueuedConnection);
+        if(i>=max-THREADCOUNT)
+            connect(pipe,&Pipeline::completed,this,[this](){this->all_end();});
 
-        //qApp->processEvents();
     }
+    lbl_status->setText("Started detection of " + QString::number(max) + " images with Pipeline: " + cb_pipelines->currentText());
 }
 
 void MainWindow::saveSelected() {
@@ -402,4 +402,23 @@ void MainWindow::clear()
 
 void MainWindow::incrementStatus(){
     pb_status->setValue(pb_status->value()+1);
+}
+
+void MainWindow::all_end(){
+    all_sem++;
+    if(all_sem==THREADCOUNT){
+        pb_solve_all->setEnabled(true);
+        all_tmr_end = QTime::currentTime();
+        quint64 secs = all_tmr_start.secsTo(all_tmr_end);
+        lbl_status->setText("Finisched in " + QString::number(secs) + " seconds for " + all_pipe);
+    }
+}
+
+void MainWindow::all_restart(){
+    all_sem = 0;
+    all_pipe = cb_pipelines->currentText();
+    int max = mainTable->rowCount();
+    if(max < THREADCOUNT)
+        all_sem = THREADCOUNT-max;
+    all_tmr_start = QTime::currentTime();
 }

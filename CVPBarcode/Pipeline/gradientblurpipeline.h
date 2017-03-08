@@ -4,8 +4,6 @@
 #include "../Pipeline/pipeline.h"
 
 #include "../Steps/loaderstep.h"
-#include "../Steps/showstep.h"
-#include "../Steps/readerstep.h"
 #include "../Steps/gradientblurstep.h"
 
 #include <QString>

@@ -121,7 +121,7 @@ Point2f getIntersectionPoint(Point2f a1, Point2f a2, Point2f b1, Point2f b2)
     Point2f r(a2-a1);
     Point2f s(b2-b1);
 
-    if (cross(r, s) == 0) throw "getIntersectionPoint";
+    if (cross(r, s) == 0) throw BarcodeError(QString("getIntersectionPoint").toLatin1());
 
     double t = cross(b1-a1, s)/cross(r, s);
 

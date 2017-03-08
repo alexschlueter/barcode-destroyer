@@ -13,7 +13,7 @@ void LSDTemplatePipeline::execute(void* data){
     LSDStep lsd;
     VariationBoundaryFinderStep var;
     //ShowStep display("After LSD");
-    TemplateMatchingStep reader("../cells");
+    TemplateMatchingStep reader(":/cells");
 
 
     connectSteps(loader, lsd);

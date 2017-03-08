@@ -23,11 +23,17 @@
 #include <QScrollArea>
 #include <QSplitter>
 #include <QSettings>
+#include <QTime>
+#include <QScrollBar>
 
-
-#include "Pipeline/pipeline.h"
-#include "Pipeline/gradientblurpipeline.h"
-#include "Pipeline/lsdtemplatepipeline.h"
+#include "../Pipeline/pipeline.h"
+#include "../Pipeline/gradientblurpipeline.h"
+#include "../Pipeline/lsdtemplatepipeline.h"
+//#include "Pipeline/pipeline.h"
+//#include "Pipeline/gradientblurpipeline.h"
+#include "../Pipeline/lsdtemplatepipeline.h"
+#include "../aspectratiopixmaplabel.h"
+#include "../utils.h"
 
 class MainWindow : public QMainWindow
 {
@@ -38,6 +44,10 @@ public:
     ~MainWindow();
 
 private:
+    int all_sem = 0;
+    QTime all_tmr_start;
+    QTime all_tmr_end;
+    QString all_pipe;
     QVector<QThread*> threads;
     QWidget * mainWidget;
     QGridLayout * layout;
@@ -78,6 +88,8 @@ private:
     QString getTableText(int r, int c);
     bool resultIsCorrect(int row, const QString &result);
     void updateRowWithResult(int row, const QString &result);
+    void all_end();
+    void all_restart();
 
 signals:
     void previewChanged();

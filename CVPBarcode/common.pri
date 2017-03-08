@@ -5,6 +5,8 @@ QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas -Wno-unus
 
 TEMPLATE = app
 
+RESOURCES = ../cells.qrc
+
 win32 {
 
     INCLUDEPATH += C:/openCV31/include
@@ -30,21 +32,12 @@ HEADERS += \
     ../Pipeline/gradientblurpipeline.h \
     ../Pipeline/pipeline.h \
     ../Steps/loaderstep.h \
-    ../Steps/readerstep.h \
-    ../Steps/showstep.h \
     ../Steps/step.h \
     ../Steps/gradientblurstep.h \
     ../Steps/lsdstep.h \
     ../Steps/templatematchingstep.h \
     ../aspectratiopixmaplabel.h \
     ../utils.h \
-    ../Steps/neuralhoughstep.h \
-    ../Steps/neural-hough/HoughTransform.hpp \
-    ../Steps/neural-hough/mlp_threshold.hpp \
-    ../Steps/neural-hough/MLP.hpp \
-    ../Steps/neural-hough/hough_histogram.hpp \
-    ../Pipeline/neuralhoughpipeline.h \
-    ../Steps/neural-hough/draw_hist.hpp \
     ../Steps/variationboundaryfinderstep.h \
     ../Steps/muensterboundaryfinderstep.h \
     ../Pipeline/lsdtemplatepipeline.h \
@@ -56,21 +49,12 @@ SOURCES += \
     ../Pipeline/gradientblurpipeline.cpp \
     ../Pipeline/pipeline.cpp \
     ../Steps/loaderstep.cpp \
-    ../Steps/readerstep.cpp \
-    ../Steps/showstep.cpp \
     ../Steps/step.cpp \
     ../Steps/gradientblurstep.cpp \
     ../Steps/lsdstep.cpp \
     ../Steps/templatematchingstep.cpp \
     ../aspectratiopixmaplabel.cpp \
     ../utils.cpp \
-    ../Steps/neuralhoughstep.cpp \
-    ../Steps/neural-hough/HoughTransform.cpp \
-    ../Steps/neural-hough/mlp_threshold.cpp \
-    ../Steps/neural-hough/MLP.cpp \
-    ../Steps/neural-hough/hough_histogram.cpp \
-    ../Pipeline/neuralhoughpipeline.cpp \
-    ../Steps/neural-hough/draw_hist.cpp \
     ../Steps/variationboundaryfinderstep.cpp \
     ../Steps/muensterboundaryfinderstep.cpp \
     ../Pipeline/lsdtemplatepipeline.cpp \

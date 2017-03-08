@@ -13,7 +13,7 @@ void LSDMuensterTemplatePipeline::execute(void* data){
     LSDStep lsd;
     MuensterBoundaryFinderStep bound;
     //ShowStep display("After LSD");
-    TemplateMatchingStep reader("../cells");
+    TemplateMatchingStep reader(":/cells");
     //ReaderStep reader;
 
 

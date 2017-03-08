@@ -58,7 +58,7 @@ struct Pattern {
         case GUARD: case MID:
             return 1;
         }
-        throw "Pattern::operator[]";
+        throw BarcodeError(QString("Pattern::operator[]").toLatin1());
     }
     int size() const {
         switch (type) {
@@ -69,7 +69,7 @@ struct Pattern {
         case MID:
             return 5;
         }
-        throw "Pattern::size";
+        throw BarcodeError(QString("Pattern::size").toLatin1());
     }
     int baseUnits() const {
         switch (type) {
@@ -80,7 +80,7 @@ struct Pattern {
         case MID:
             return 5;
         }
-        throw "Pattern::baseUnits";
+        throw BarcodeError(QString("Pattern::baseUnits").toLatin1());
     }
     bool firstWhite() const {
         switch (type) {
@@ -89,7 +89,7 @@ struct Pattern {
         case C: case GUARD:
             return false;
         }
-        throw "Pattern::firstWhite";
+        throw BarcodeError(QString("Pattern::firstWhite").toLatin1());
     }
     std::string toString() const {
         switch (type) {
@@ -104,7 +104,7 @@ struct Pattern {
         case MID:
             return "MID";
         }
-        throw "Pattern::toString";
+        throw BarcodeError(QString("Pattern::toString").toLatin1());
     }
 };
 

@@ -13,6 +13,8 @@ DISTFILES += \
 
 CONFIG += ordered
 
+RESOURCES = cells.qrc
+
 SUBDIRS += \
     cli/cli.pro \
-    gui/gui.pro \
+    gui/gui.pro
