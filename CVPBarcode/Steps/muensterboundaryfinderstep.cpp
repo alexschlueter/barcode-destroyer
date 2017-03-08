@@ -1,7 +1,6 @@
 #include "muensterboundaryfinderstep.h"
 #include "lsdstep.h"
 #include "../utils.h"
-
 #include <iostream>
 
 using namespace std;
@@ -153,10 +152,11 @@ void MuensterBoundaryFinderStep::execute(void *data)
         // get the second lowest minimum and the second highest maximum under those 7
         std::nth_element(minCopy.begin(), minCopy.begin()+1, minCopy.end(), [](auto a, auto b) { return a.second > b.second; });
         std::nth_element(maxCopy.begin(), maxCopy.begin()+1, maxCopy.end(), [](auto a, auto b) { return a.second < b.second; });
-
         // their average is the threshold value for the current point on the scanline
         // TODO: segfault when less than two in vector
-        uchar threshold = (minCopy[1].second+maxCopy[1].second)/2;
+        uchar threshold = 127;
+        if(minCopy.size() >=2 && maxCopy.size() >=2)
+            threshold = (minCopy[1].second+maxCopy[1].second)/2;
         binarized.emplace_back(colAvg[j] >= threshold);
         Point lastPlotPoint{j*(visCols/numPix), visRows-lastThresh*(visRows/255)};
         Point curPlotPoint{(j+1)*(visCols/numPix), visRows-threshold*(visRows/255)};
@@ -164,7 +164,6 @@ void MuensterBoundaryFinderStep::execute(void *data)
 
         lastThresh = threshold;
     }
-
     // find first black pixel to the right of the center
     auto firstBlack = find(binarized.begin()+newLenLeft, binarized.end(), false);
     auto curRight = find(firstBlack, binarized.end(), true);
