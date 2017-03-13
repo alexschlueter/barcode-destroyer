@@ -1,5 +1,5 @@
 #include "lsdstep.h"
-#include "utils.h"
+#include "../utils.h"
 #include <iostream>
 
 using namespace std;

@@ -6,6 +6,7 @@
 class LSDBoundaryFinderStep : public Step
 {
     Q_OBJECT
+public:
 
     template <class LineIt>
     std::vector<cv::Point> extendBoundWithLines(const cv::Point &bound, const cv::Point2f &dir, float allowedDistance, LineIt linesBegin, LineIt linesEnd);

@@ -6,7 +6,7 @@
 #ifndef TEMPLATEMATCHINGSTEP_H
 #define TEMPLATEMATCHINGSTEP_H
 
-#include "Steps/step.h"
+#include "../Steps/step.h"
 #include "QString"
 #include <ostream>
 
@@ -91,7 +91,7 @@ struct Pattern {
             if (i > 3) return 1;
             else return actualBarSize(i);
         }
-        throw "Pattern::operator[]";
+        throw BarcodeError(QString("Pattern::operator[]").toLatin1());
     }
     int numBars() const {
         switch (extension) {
@@ -100,7 +100,7 @@ struct Pattern {
         case MID:
             return 4;
         }
-        throw "Pattern::numBars";
+        throw BarcodeError(QString("Pattern::size").toLatin1());
     }
     int baseUnits() const {
         switch (extension) {
@@ -109,7 +109,7 @@ struct Pattern {
         case MID:
             return 7;
         }
-        throw "Pattern::baseUnits";
+        throw BarcodeError(QString("Pattern::baseUnits").toLatin1());
     }
     // Is the first bar white?
     bool firstWhite() const {

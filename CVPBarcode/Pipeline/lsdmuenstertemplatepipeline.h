@@ -2,7 +2,7 @@
 #define LSDMUENSTERTEMPLATEPIPELINE_H
 
 
-#include "Pipeline/pipeline.h"
+#include "../Pipeline/pipeline.h"
 #include <QString>
 
 class LSDMuensterTemplatePipeline : public Pipeline

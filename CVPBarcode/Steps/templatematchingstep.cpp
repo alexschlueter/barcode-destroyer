@@ -1,6 +1,6 @@
 #include "templatematchingstep.h"
 #include "lsdstep.h"
-#include "utils.h"
+#include "../utils.h"
 
 #include <QDirIterator>
 #include <QDebug>
@@ -132,7 +132,9 @@ const Pattern::Type Pattern::firstDigitPatterns[][6] = {
 vector<Cell> TemplateMatchingStep::readCellsFromFile(QString filepath) {
     QFile file(filepath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        throw "TemplateMatchingStep: Could not open cell file " + filepath;
+        QString ex("TemplateMatchingStep: Could not open cell file " + filepath);
+        throw BarcodeError(ex.toLatin1());
+
     }
     QTextStream in(&file);
     in.readLine();

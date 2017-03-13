@@ -1,10 +1,10 @@
 #include "lsdmuenstertemplatepipeline.h"
 
-#include "Steps/templatematchingstep.h"
-#include "Steps/loaderstep.h"
-#include "Steps/readerstep.h"
-#include "Steps/lsdstep.h"
-#include "Steps/muensterboundaryfinderstep.h"
+#include "../Steps/templatematchingstep.h"
+#include "../Steps/loaderstep.h"
+#include "../Steps/readerstep.h"
+#include "../Steps/lsdstep.h"
+#include "../Steps/muensterboundaryfinderstep.h"
 
 void LSDMuensterTemplatePipeline::execute(void* data){
     QString path = *static_cast<QString*>(data);
@@ -13,7 +13,7 @@ void LSDMuensterTemplatePipeline::execute(void* data){
     LSDStep lsd;
     MuensterBoundaryFinderStep bound;
     //ShowStep display("After LSD");
-    TemplateMatchingStep reader("../cells");
+    TemplateMatchingStep reader(":/cells");
     //ReaderStep reader;
 
 

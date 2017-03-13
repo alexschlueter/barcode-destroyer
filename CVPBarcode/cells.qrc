@@ -1,0 +1,26 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/cells">
+    <file alias="guard.dat">../cells/guard.dat</file>
+    <file alias="mid.dat">../cells/mid.dat</file>
+    <file alias="A/0.dat">../cells/A/0.dat</file>
+    <file alias="A/1.dat">../cells/A/1.dat</file>
+    <file alias="A/2.dat">../cells/A/2.dat</file>
+    <file alias="A/3.dat">../cells/A/3.dat</file>
+    <file alias="A/4.dat">../cells/A/4.dat</file>
+    <file alias="A/5.dat">../cells/A/5.dat</file>
+    <file alias="A/6.dat">../cells/A/6.dat</file>
+    <file alias="A/7.dat">../cells/A/7.dat</file>
+    <file alias="A/8.dat">../cells/A/8.dat</file>
+    <file alias="A/9.dat">../cells/A/9.dat</file>
+    <file alias="B/0.dat">../cells/B/0.dat</file>
+    <file alias="B/1.dat">../cells/B/1.dat</file>
+    <file alias="B/2.dat">../cells/B/2.dat</file>
+    <file alias="B/3.dat">../cells/B/3.dat</file>
+    <file alias="B/4.dat">../cells/B/4.dat</file>
+    <file alias="B/5.dat">../cells/B/5.dat</file>
+    <file alias="B/6.dat">../cells/B/6.dat</file>
+    <file alias="B/7.dat">../cells/B/7.dat</file>
+    <file alias="B/8.dat">../cells/B/8.dat</file>
+    <file alias="B/9.dat">../cells/B/9.dat</file>
+</qresource>
+</RCC>

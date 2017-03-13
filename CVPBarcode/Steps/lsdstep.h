@@ -1,7 +1,7 @@
 #ifndef LSDSTEP_H
 #define LSDSTEP_H
 
-#include "Steps/step.h"
+#include "../Steps/step.h"
 #include <QString>
 
 #include "opencv2/core/core.hpp"
