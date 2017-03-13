@@ -1,0 +1,72 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english, german]{babel}
+\author{Aleksej Matis, Alexander Schlüter, Kjeld Schmidt}
+\title{Titel: Iwas mit Barcodes}
+\date{24. März 2017}
+\makeatletter
+\let\inserttitle\@title
+\makeatother
+\usepackage{url}
+\usepackage{graphicx} 
+%\usepackage[T1]{fontenc}
+%\usepackage{txfonts} %Schriftart Times New Roman
+\usepackage{helvet} %Schrift Arial
+\renewcommand{\familydefault}{\sfdefault}
+\fontfamily{phv}\selectfont
+\usepackage[left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm,includeheadfoot]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{amsmath}
+\usepackage{fancyhdr} 
+\pagestyle{fancy} 
+\rhead{\thepage} \chead{} \lhead{\inserttitle}
+\rfoot{} \cfoot{} \lfoot{}  
+\renewcommand{\headrulewidth}{0.5pt}
+\usepackage[authoryear]{natbib}
+\renewcommand{\bibsection}{\section{Literatur}}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+
+\begin{document}
+
+
+\input{01preamble}
+\setcounter{page}{0}
+\maketitle
+\thispagestyle{empty} 
+\tableofcontents
+\newpage
+\section{Einleitung} 
+\input{02einleitung}
+
+\newpage
+\section{Meta: Wie zitiere ich?} 
+\begin{enumerate}
+\item Titel des Papers bei \url{https://scholar.google.de/} Google Scholar suchen.
+\item Bei dem Eintrag zu dem Paper unten auf zitieren klicken, dann auf BibTex.
+\item Den BibTex string kopieren in die \textsc{literatur.bib}
+\item Zitat hinzufügen durch \textsc{\textbackslash cite\{\textit{name}\}}
+\item Übersicht BibTex: \url{https://de.wikibooks.org/wiki/LaTeX-Kompendium:_Zitieren_mit_BibTeX}
+\end{enumerate}
+Beispiel Templatematching \cite{chen2014scanning}
+%\input{03titel}
+
+%\newpage
+%\section{Einleitung} 
+%\input{04titel}
+
+\newpage
+\appendix
+\begin{small}
+\bibliography{literature}
+\bibliographystyle{plain}
+\end{small}
+
+\end{document}
