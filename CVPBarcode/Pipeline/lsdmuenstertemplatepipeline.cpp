@@ -2,7 +2,6 @@
 
 #include "../Steps/templatematchingstep.h"
 #include "../Steps/loaderstep.h"
-#include "../Steps/readerstep.h"
 #include "../Steps/lsdstep.h"
 #include "../Steps/muensterboundaryfinderstep.h"
 
