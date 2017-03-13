@@ -8,7 +8,6 @@
 \makeatletter
 \let\inserttitle\@title
 \makeatother
-\usepackage{url}
 \usepackage{graphicx} 
 %\usepackage[T1]{fontenc}
 %\usepackage{txfonts} %Schriftart Times New Roman
@@ -25,6 +24,7 @@
 \renewcommand{\headrulewidth}{0.5pt}
 \usepackage[authoryear]{natbib}
 \renewcommand{\bibsection}{\section{Literatur}}
+\usepackage{url}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks,
@@ -64,9 +64,7 @@ Beispiel Templatematching \cite{chen2014scanning}
 
 \newpage
 \appendix
-\begin{small}
 \bibliography{literature}
 \bibliographystyle{plain}
-\end{small}
 
 \end{document}
