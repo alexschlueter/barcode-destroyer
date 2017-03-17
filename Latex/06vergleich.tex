@@ -1,0 +1,32 @@
+Einleitun...
+\subsection{Datasets}
+übersicht über die Datasets
+\begin{itemize}
+\item Generiert
+\item Wachenfeld \cite{wachenfeld2008robust}
+\item ArteLab \cite{zamberletti2010neural} \cite{zamberletti2013robust}
+\end{itemize}
+\subsection{Laufzeit}
+Geprüft auf dem Wachenfeld Dataset mit 1055 Bildern \cite{wachenfeld2008robust}\\
+Laufzeit gemessen auf Debian 8 mit 4Gb Ram, 2.2 Ghz CPU, 4 Kerne und 4 Threads
+
+\begin{figure}[t]
+\center
+\begin{tabular}{|l|r|r|r|}
+\hline
+&\textbf{Fehler}&\textbf{Prozent Korrekt}&\textbf{Zeit in Sekunden}\\
+\hline
+\textbf{Gradient+Blur}& 831& 22\%& 266\\
+\hline
+\textbf{LSD+Wachenfeld}& 452& 56\%& 319\\
+\hline
+\textbf{LSD+LSDBounds}& 41& 97\%& 1760\\
+\hline
+\textbf{LSD+Variation}& 279& 74\%& 1595\\
+\hline
+\end{tabular}
+\caption{Vergleich der Laufzeit und Genauigkeit der Methoden}
+\label{laufzeit}
+\end{figure}
+Siehe Abbildung \ref{laufzeit}
+ 
