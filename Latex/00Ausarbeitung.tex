@@ -1,7 +1,7 @@
 \documentclass[12pt,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
-\usepackage[english, german]{babel}
+\usepackage[english]{babel}
 \author{Aleksej Matis, Alexander Schlüter, Kjeld Schmidt}
 \title{Titel: Iwas mit Barcodes}
 \date{24. März 2017}
@@ -16,14 +16,23 @@
 \fontfamily{phv}\selectfont
 \usepackage[left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm,includeheadfoot]{geometry}
 \usepackage[onehalfspacing]{setspace}
-\usepackage{amsmath}
+\usepackage{mathtools,amssymb,amsthm} % Verbesserung von amsmath (die amsmath selbst lädt)
 \usepackage{fancyhdr} 
 \pagestyle{fancy} 
 \rhead{\thepage} \chead{} \lhead{\inserttitle}
 \rfoot{} \cfoot{} \lfoot{}  
 \renewcommand{\headrulewidth}{0.5pt}
-\usepackage[authoryear]{natbib}
-\renewcommand{\bibsection}{\section{Literatur}}
+\usepackage[%
+	backend=biber,
+	sortlocale=auto,
+	natbib,
+	hyperref,
+	style=numeric, % eine unvollständige Auswahl von Styles: ieee, numeric, apa
+  maxcitenames=1
+	]%
+{biblatex}
+% \renewcommand{\bibsection}{\section{Literatur}}
+\addbibresource{literature.bib}
 \usepackage{url}
 \usepackage{hyperref}
 \hypersetup{
@@ -33,6 +42,24 @@
     linkcolor=black,
     urlcolor=black
 }
+%-- charakteristische-Funktion-/Indikatorfunktion-Eins '\ind'
+\usepackage{silence}
+\WarningFilter{latexfont}{Size substitutions with differences}
+\WarningFilter{latexfont}{Font shape `U/bbold/m/n' in size}
+\DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
+\DeclareSymbolFontAlphabet{\mathbbold}{bbold}
+\newcommand{\ind}{\mathbbold{1}}
+
+%-- Ein sehr hübscher Mengen-Befehl
+\newcommand\SetSymbol[1][]{\nonscript\:#1\vert\allowbreak\nonscript\:\mathopen{}}
+\providecommand\given{} % to make it exist
+\DeclarePairedDelimiterX\set[1]\{\}{\renewcommand\given{\SetSymbol[\delimsize]}#1}
+
+%-- Klammern, Skalarprodukt und Norm
+\DeclarePairedDelimiter{\enbrace}{(}{)}
+\DeclarePairedDelimiter{\abs}{|}{|}
+\DeclarePairedDelimiterX\skal[2]{\langle}{\rangle}{#1\,\delimsize\vert\,#2}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
 
 \begin{document}
 
@@ -99,7 +126,5 @@ Verbesserung
 
 \newpage
 \appendix
-\bibliography{literature}
-\bibliographystyle{plain}
-
+\printbibliography
 \end{document}

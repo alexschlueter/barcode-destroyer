@@ -203,7 +203,7 @@ void MainWindow::importFromPath(){
                     code = file.readLine(14);
                     file.close();
                 } else if(cb_code->currentIndex()==1){
-                    code = a.fileName().left(13);
+                    code = a.fileName().left(13).remove(QRegularExpression("\\D+")).rightJustified(13, '0');
                 }
                 includeFile(filep,a.fileName(),code);
                 count++;
@@ -224,7 +224,7 @@ void MainWindow::importFromPath(){
             code = file.readLine(13);
             file.close();
         } else if(cb_code->currentIndex()){
-            code = a.fileName().left(13);
+            code = a.fileName().left(13).remove(QRegularExpression("\\D+")).rightJustified(13, '0');
         }
         includeFile(path,a.fileName(),code);
         count++;

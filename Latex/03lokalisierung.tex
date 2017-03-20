@@ -3,4 +3,66 @@ Kurze Einleitung
 \subsection{Gradient+Blur}
 Bla bla
 \subsection{LSD}
-Bla bla
+This localization method is based on the LineSegmentDetector algorithm
+\cite{GromponevonGioi2012}, which is implemented in OpenCV 3 in the
+cv::LineSegmentDetector class \cite{Bradski2017}. The algorithm detects line
+segments in an image, such as the segments formed by the bars in a barcode.
+On a high level, it works by first calculating the image gradient and assigning
+to each pixel a unit vector perpendicular to the gradient, resulting in a
+\emph{level line field}. Pixels with a gradient magnitude under a certain
+tolerance are discarded. Connected pixels with similar level line angles are clustered
+together and form a \emph{line support region}. To each line support region, a
+rectangle is fit which covers the whole region. To limit the number of false
+detections, the rectangle is only accepted as a line segment if the number of
+covered pixels with aligned level lines is high enough relative to the total number of
+covered pixels. The exact threshold is based on a statistical model (\emph{a
+  contrario} method), so that the rectangle is only accepted if,
+in a purely random level line field, the found ratio of aligned level lines is unlikely.
+Before a rectangle is rejected, some variations of the rectangle's parameters
+are tried.
+
+The barcode localization method is taken from \citeauthor{Creusot2016} with minor modifications. First we run
+the LineSegmentDetector provided by OpenCV on the image. We use default
+parameters, except for the first parameter LSD\_REFINE\_NONE, which disables
+refinement of line segments. We found that line refinement tends to break up
+barcode bars into multiple segments, e.g. if the bars in the image are not quite
+straight due to kinks in the material on which the barcode is printed, or if
+there are glare spots on the barcode. This is undesirable, since in the
+following steps we rely on the length of line segments in the barcode to be similar.
+
+Next we want to find a line segment which belongs to a barcode bar approximately
+in the middle of the barcode. To each detected line segment, a score is assigned
+based on how many other line segments might belong to bars of the same barcode as the first
+one. Two line segments are regarded as possibly belonging to the same barcode, if
+\begin{enumerate}
+\item their centers are not too far apart,
+\item they have similar length,
+\item they have similar angles and
+\item their projected intersection covers most of the smaller segment.
+\end{enumerate}
+
+Calculation of the first three distance measures is straightforward: Let $c_i$
+be the center positions, $l_i$ the segment lengths and $\alpha_i$ the segment angles, where the index $i=1,2$
+denotes the first or the second line segment, respectively. The used criteria are
+\begin{equation*}
+d_{\text{center}}\coloneqq\frac{\norm{c_1-c_2}}{l_1}<1,\qquad \frac{\abs{l_1-l_2}}{l_1}<0.3,\qquad \abs{\alpha_1-\alpha_2}<0.1\,.
+\end{equation*}
+As BIIIIIIILD shows, two lines fulfilling the first three criteria might
+still not be arranged like barcode bars, if they are displaced along the line
+segment direction. To catch these cases, we project the second line onto the
+first and check that the intersection is large enough relative to the length of
+the smaller line, see BIIIIIIILD2.
+
+For each line segment which fulfills the criteria, \citeauthor{Creusot2016}
+increment the score of the first line by one. Instead, we increment the score of the
+first line segment by $1-d_{\text{center}}$. This effectively weights the score by the distance
+between the line segments, which favors line segments which lie in
+the middle of the barcode.
+
+Finally, we select the line segment with the highest score. This line segment
+should correspond to a barcode bar in the middle of the barcode.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "00Ausarbeitung.tex"
+%%% End:
