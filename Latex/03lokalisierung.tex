@@ -1,7 +1,30 @@
-Kurze Einleitung
+In order to read a barcode, we first have to localize it in a given image. We implemented two approaches. Gradient+Blur is a simple algorithm, with which we had some initial success. We later discarded it in favor of the much more successful Line Segment Detector approach. Both are detailed in this chapter.
 
 \subsection{Gradient+Blur}
-Bla bla
+Our initial localization attempt showed limited success, but is conceptually very simple. The Gradient+Blur approach seeks to exploit the strong boundaries between the (white) background area and black bars in a standard barcode. In a few words; Detect edges on the image, then blur the result to remove noise and apply a threshold to the result. Open and close the resulting shapes, then select the biggest one. We will now go trough the steps in more detail.
+
+\begin{enumerate}
+	\item Edge Detection
+	
+	We begin by detecting edges with the Sobel operator. We calculate the absolute gradient, discarding direction information. This leads to slightly worse results for barcodes rotated by about 45 degrees. The resulting image will usually contain large amounts of noise. This is fixed in the next step. 
+
+	\item Blur+Threshold
+	
+	Next, we blur the previous result to smooth out the noise and apply a threshold afterwards. The blur is a normalized box filter of size 9. Note that 'noise' here refers not only to image imperfections, but also noise in the absolute gradient which might be a result of complex textures or other sources. The threshold is not set as a constant brightness of 127. Instead, we calculate the mean brightness of the image, add that value to 255 and divide by 2. This simple extra step gives slightly better results when dealing with very noisy images.
+	
+	\item Close Forms
+	
+	The next two steps are very similar operations. First we \emph{close} the remaining white areas. This means we first dilate the image, then erode it by the same amount. Dilation creates a new image in which a pixel is set to white if there is at least one white pixel within a given radius white in the original image. More intuitively, white pixels grow outwards. Erosion is the opposite operation; A pixel is set to black, unless all pixels in the radius are white.  This \emph{closes} empty spaces between neighboring and inside of structures, while structures with no neighbors will remain unchanged. At this point, the barcode will ideally have merged into a solid shape, 
+	
+	\item Open Forms
+	
+	Opening the forms is similar to closing, but in reverse order; First eroding, then dilating by the same amount. This will eliminate small structures (which is not actually impotant at this point), while straightening edges on larger structures. 
+	
+	\item Selection
+	
+	Finally, we select the largest structure to be the most likely location of the barcode in the original image. In most cases, our result will be a jagged shape, only roughly tracing a rectangle. To simplify matters going forward, we now find the minimal area rectangle around the selected structure. This will get passed into the boundary detection step.
+\end{enumerate}
+
 \subsection{LSD}\label{sec:LSD}
 This localization method is based on the LineSegmentDetector algorithm
 \cite{GromponevonGioi2012}, which is implemented in OpenCV 3 in the
