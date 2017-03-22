@@ -1,20 +1,80 @@
-Einleitung...
+\subsection{Pros and Cons}
+\subsubsection*{Gradient + Blur}
+Pros:
+
+Gradien+Blur is conceptually extremely simple and therefor extremely fast. It also is robust against disturbances like reflections since it only looks for the biggest contour.
+\\
+\\
+Cons:
+
+Since the algorithm uses the absolute gradient it is quite weak against rotations of 45 degrees. Gradient+Blur is also dependent on many parameters. If these parameters don't match up with the barcode the algorithm fails. One such instance is a too small kernel size for the closing step, which leads to a fragmented contour because it fails to close the white segments. Another problem is the susceptibility to noise. Gradient+Blur could mistake the wrong contour for the barcode.
+
+\subsubsection*{LSD}
+Pros:
+
+The LSD is still relatively fast and can reliably detect a barcode in almost every position and rotation.
+\\
+\\
+Cons:
+
+The LSD looks for all parallel lines. If other parallel lines are parallel to the barcode and close enough they can be added to the barcode by mistake. Disturbances like reflections can also break barcode lines and lead to exclusion valid lines.
+
+\subsubsection*{Variation}
+Pros:
+
+Variation
+\\
+\\
+Cons:
+
+Variation
+
+\subsubsection*{LSD Bound}
+Pros:
+
+The LSD Boundary Detection is extremely accurate since it test all significant lines determent by the LSD localization and returns multiple potentiality boundary points.
+\\
+\\
+Cons:
+
+Since it is strongly dependent on the LSD localization it fails as soon as the LSD localization fails. And since an enormous amount of lines needs to be tested the algorithms is not suited for real time applications.
+
+\subsubsection*{Wachenfeld}
+Pros:
+
+The Wachenfeld algorithm is relatively quick since it is based on a scan line.
+\\
+\\
+Cons:
+
+The algorithm is strongly dependent on the quality of the preprocessing and detection of local extrema. And since the algorithm is based on a scan line it has no way to deal with broken barcodes caused by disturbances. Finally if the last segment selection steps misses the barcode can be shifted to the left or right and become unreadable.
+ 
+\subsubsection*{Template Matching}
+Pros:
+
+Since no binarization is required template matching is extremely robust against bluered barcodes. The algorithm also uses percentages to read the barcode and is therefor flexible when encountering errors. 
+\\
+\\
+Cons:
+
+The matching process required precomputed data to be matched against the barcode. This can take a lot of time and memory depending on the targeted accuracy. And since the template matching is based on probability it is more likely to return a false positive result than no result.
+
 \subsection{Datasets}
 The implemented algorithms were tested on three datasets.
 \begin{itemize}
 \item Generated Barcodes:
 \begin{itemize}
 \item 110 images, 300$\times$150 px, barcode only.
-\item 110 images, 1000$\times$1000 px, barcodes (300$\times$150 px) randomly rotated and translated.
+\item 110 images, 1000$\times$1000 px, barcodes (300$\times$150 px) randomly rotated and translated on white background.
 \end{itemize}
-\item WWU Muenster Barcode Database \cite{MuensterBarcodeDB} \citep{wachenfeld2008robust}:\\
+\item WWU Muenster Barcode Database \cite{MuensterBarcodeDB}\citep{wachenfeld2008robust}:\\
 1055 images, 800$\times$600 px.
 \item ArteLab Dataset - Robust Angle Invariant 1D Barcode Detection \cite{ArteLabDB} \cite{zamberletti2010neural} \citep{zamberletti2013robust}:\\
 2 sets of 215 images, 800$\times$600 px.
 \end{itemize}
-\subsection{Laufzeit}
-Geprüft auf dem Wachenfeld Dataset mit 1055 Bildern \cite{wachenfeld2008robust}\\
-Laufzeit gemessen auf Debian 8 mit 4Gb Ram, 2.2 Ghz CPU (Intel N2940), 4 Kerne und 4 Threads
+
+\subsection{Run-Time Comparison}
+The algorithms were compared over the 1055 images of the WWU Muenster Barcode Database \citep{MuensterBarcodeDB}. The programm was implemented in C++ with the help of the Qt 5.7 and OpenCV 3.1 frameworks. The test were made on a Debian 8 system with an Intel N2940 CPU, 4 Cores / 4 Threads, and 4 GB RAM. The results are shown in \cref{laufzeit}.
 
 \begin{figure}[t]
 \center
@@ -34,8 +94,7 @@ Laufzeit gemessen auf Debian 8 mit 4Gb Ram, 2.2 Ghz CPU (Intel N2940), 4 Kerne u
 \hline
 \end{tabular}
 \egroup
-\caption{Comparison of different algorithms on the Wachenfeld database \citep{MuensterBarcodeDB}}
+\caption{Comparison of different algorithms on the WWU Muenster Barcode Database.}
 \label{laufzeit}
 \end{figure}
-Siehe \cref{laufzeit}
  
