@@ -2,16 +2,16 @@ In this section, we will consider some possible improvements of our algorithms.
 
 \subsection{Gradient+Blur Detection}
 
-\subsubsection{Vary by rotation}
+\subsubsection*{Vary by rotation}
 Since the Gradient+Blur-detection builds from the absolute gradients found by the Sobel operator, results might be poor when a barcode is rotated close to 45 degrees. To remedy this, we might run the detection on rotated versions of the image. Rotating once by 45 degrees would yield the greatest improvement, however, multiple rotations could be checked at diminishing returns.
 
-\subsubsection{Vary kernel sizes}
+\subsubsection*{Vary kernel sizes}
 In our current implementation, all operations (blurring, closing, opening) are applied with a constant kernel size. This is somewhat problematic, since the effectiveness of these parameters is dependent on the size of the barcode. If a barcode is not detected successfully, we might try different kernel sizes.\newline
 The initial kernel size might also be considered further: The current values have been empirically determined to be most useful for the image sizes we worked with. Scaling the kernel size appropriately for each image might lead to better results, since it seems likely that the relative sizes barcodes in images is independent of image resolution.
 
 
 \subsection{LSD}
-\subsubsection{Unite interrupted line segments}
+\subsubsection*{Unite interrupted line segments}
 
 A remaining common failure of the LSD algorithm is it's poor handling of reflections on the barcode. These reflections visually interrupt the barcode lines, so two short line segments are returned instead of one. This is problematic, as length of line segments is an important factor in deciding whether two line segments might be part of the same barcode. This ultimately leads to a split in the barcode, where the detected area covers just the larger side of the code.
 
@@ -20,11 +20,11 @@ This problem could be fixed in two related ways: First, we could try a \emph{lin
 This first approach has the weakness of only working when the reflection splits the line segment into two parts. Even better would be an approach that could handle a missing endpoint. This should be handled by this second approach, which is also more complicated: Instead of uniting line segments, we would now consider the endpoints of line segments in a second pass over all segments. During the first pass, whenever a pair of lines is considered to likely be part of the same barcode, save the location of their endpoints in two different lists, based on distance from the origin. After this first pass, those lists can easily construct the upper and lower bound of the barcode. With this new information, discard the previous scores and redo them. However, this time, instead of checking for similar length, check whether two line segments have an endpoint near one of those two lines before assigning a score to them. This second pass will now also handle missing endpoints.
 
 \subsection{Wachenfeld}
-\subsubsection{Proper preprocessing, multiple scanlines}
+\subsubsection*{Proper preprocessing, multiple scanlines}
 
 Since we have found quick success with the LSD-Boundary detection, our current implementation of the Wachenfeld algorithm does not prepare the image in the way recommended in the original paper, that is, there is no adaptive thresholding along the scanline, which is a major factor of success for the original implementation. Thus, proper initialization would likely greatly improve our results. Also, we could detect along multiple scanlines and vote for most likely boundaries.
 
 \subsection{Template Matching}
-\subsubsection{Precompute patterns for blur of various strengths}
+\subsubsection*{Precompute patterns for blur of various strengths}
 
 While the algorithm is already very capable in handling blurred barcodes, this might be improved even further by precomputing patterns specifically not for an ideal, clean barcode, but for one that is already blurred.

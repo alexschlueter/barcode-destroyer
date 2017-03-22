@@ -59,14 +59,20 @@ such lines.
 \subsection[Wachenfeld]{Wachenfeld}
 Another implementation was adapted from the barcode detection and recognition algorithms proposed by Wachenfeld et al. \cite{wachenfeld2008robust}. The method is subdivided into the three steps of preprocessing, barcode edge detection and hypothesis based reading. Since we implemented barcode localization (\cref{sec:Localization}) and barcode reading (\cref{sec:Reading}) as separate steps only the edge detection with a bit of preprocessing is adapted.
 
-The originally proposed boundary detection assumes that the position of the barcode is centered. This way a simple scan line can be applied to the picture. If the barcode is unreadable or misaligned the scan line can be reapplied with a rotation or shift factor. Since the position and rotation of the barcode is already determined in the localization step it is sufficient to place a scan line perpendicular to the best line and apply shift factors only if the initial reading fails. 
+The originally proposed boundary detection assumes that the position of the barcode is centered. This way a simple scan line can be applied to the picture. If the barcode is unreadable or misaligned the scan line can be reapplied with a rotation or shift factor. Since the position and rotation of the barcode is already determined in the localization step it is sufficient to place a scan line perpendicular to the best line. To simplify further steps we applying a affine transformation to the region around the scan line.
 
-...\cref{wachenfeld}
- 
+For the preprocessing we need to first detect to local maxima and minima. Our pictures are already converted to gray scale on loading so we can directly traverse the scan line from to middle pixel toward the outside and look for neighboring pixels with difference in value greater then a set threshold. In a second step we need to remove overly extreme points by executing a pruning step. Lastly we need to apply a dynamic threshold by always comparing every local extrema to an inwards neighborhood.
+
+The boundary detection is based on some properties of the barcode. As shown in \cref{sec:Intro} a EAN13 barcode consist of 95 alternating black and white lines. These lines can only be arranged based on the 20 patterns defined by the specification. The patterns also have the property that every patter has exactly 4 alternations. This means a full barcode has 59 segments of black and white: 2 $\times$ 3 for the outer guard, 5 for the inner guard and 12 $\times$ 6 for the 12 digits.
+
+To detect the boundaries we start with the middle pixel. If this pixel is white we look for the nearest black pixel. The corresponding black segment of this pixel is selected. From this selection we traverse toward the outsides by looking for the smallest neighboring pair of white and black segments to the left and right and adding it to the current selection. The selected region must be at all times be enclosed by black segments. This process is demonstrated in \cref{wachenfeld}. The smallest pair of segments is required to prevent the algorithm from selecting the quit zone.
+
+The outer guard bars are detected as soon as we have selected all 59 black and white segments respectively 29 pairs and the initial middle segment.
+
 \begin{figure}[t]
 \center
 \includegraphics[width=0.6\textwidth,natwidth=900,natheight=463]{img/wachenfeld.png}
-\caption{Wachenfeld}
+\caption{Application of the Wachenfeld boundary detection. The selection is colored in red. Steps are shown from top to bottom.}
 \label{wachenfeld}
 \end{figure}
 
