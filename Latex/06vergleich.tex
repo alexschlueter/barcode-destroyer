@@ -7,7 +7,14 @@ Gradien+Blur is conceptually extremely simple and therefor extremely fast. It al
 \\
 Cons:
 
-Since the algorithm uses the absolute gradient it is quite weak against rotations of 45 degrees. Gradient+Blur is also dependent on many parameters. If these parameters don't match up with the barcode the algorithm fails. One such instance is a too small kernel size for the closing step, which leads to a fragmented contour because it fails to close the white segments. Another problem is the susceptibility to noise. Gradient+Blur could mistake the wrong contour for the barcode.
+Since the algorithm uses the absolute gradient it is quite weak against rotations of 45 degrees. Gradient+Blur is also dependent on many parameters. If these parameters don't match up with the barcode the algorithm fails. One such instance is a too small kernel size for the closing step, which leads to a fragmented contour because it fails to close the white segments. An example of this can be seen in \cref{failgradblur}. Another problem is the susceptibility to noise. Gradient+Blur could mistake the wrong contour for the barcode.
+
+\begin{figure}[t]
+\center
+\includegraphics[width=0.4\textwidth,natwidth=800,natheight=600]{img/gradientblurfail.jpg}\includegraphics[width=0.4\textwidth,natwidth=800,natheight=600]{img/gradientblurfail2.jpg}
+\caption{If the kernel size does not match to the barcode size Gradient+Blur fails to fully close the contour. The detected barcode is shown in red.}
+\label{failgradblur}
+\end{figure}
 
 \subsubsection*{LSD}
 Pros:
@@ -47,7 +54,16 @@ The Wachenfeld algorithm is relatively quick since it is based on a scan line.
 \\
 Cons:
 
-The algorithm is strongly dependent on the quality of the preprocessing and detection of local extrema. And since the algorithm is based on a scan line it has no way to deal with broken barcodes caused by disturbances. Finally if the last segment selection steps misses the barcode can be shifted to the left or right and become unreadable.
+The algorithm is strongly dependent on the quality of the preprocessing and detection of local extrema. And since the algorithm is based on a scan line it has no way to deal with broken barcodes caused by disturbances as seen in \cref{failwachenfeld}. Finally if the last segment selection steps misses the barcode can be shifted to the left or right and become unreadable.
+
+\begin{figure}[t]
+\center
+\includegraphics[width=0.4\textwidth,natwidth=800,natheight=600]{img/wachenfeldfail.jpg}
+\hspace{1cm}
+\includegraphics[width=0.4\textwidth,natwidth=1800,natheight=800]{img/wachenfeldfail2.jpg}
+\caption{Preprocessin failing to apply dynamic thresholding and determining local extrema because of light reflections.}
+\label{failwachenfeld}
+\end{figure}
  
 \subsubsection*{Template Matching}
 Pros:
