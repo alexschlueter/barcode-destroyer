@@ -1,4 +1,4 @@
-\subsection{Pros and Cons}
+\subsection{Pros and Cons}\label{sec:ProCon}
 \subsubsection*{Gradient + Blur}
 Pros:
 
@@ -73,8 +73,16 @@ The implemented algorithms were tested on three datasets.
 2 sets of 215 images, 800$\times$600 px.
 \end{itemize}
 
-\subsection{Run-Time Comparison}
+\subsection{Run-Time and Hit-Rate Comparison}
 The algorithms were compared over the 1055 images of the WWU Muenster Barcode Database \citep{MuensterBarcodeDB}. The programm was implemented in C++ with the help of the Qt 5.7 and OpenCV 3.1 frameworks. The test were made on a Debian 8 system with an Intel N2940 CPU, 4 Cores / 4 Threads, and 4 GB RAM. The results are shown in \cref{laufzeit}.
+\\
+\\
+The experimental results illustrate the pros and cons of the various algorithms shown in \cref{sec:ProCon}. The Gradient+Blur algorithm performs the best in respect to speed but the worst in respect to hit rate. The simplicity of the method is directly apparent. But the listed problems cause it to miss the boundaries or even fail to detect the barcode.
+
+Second best algorithm in speed is the Wachenfeld boundary detection. This is primary achieved through the usage of scan lines. But the unoptimized preprocessing causes the algorithm to miss the boundaries in over 40\% of tests since the dynamic thresholding fails to apply.
+
+Both Variation Boundary Detection and LSDBounds take a very long time to detect the boundaries. This is caused by the multiple computation heavy probings of possible boundaries. But since the correct boundaries are inevitable to be probed and the algorithms produces multiple candidates both algorithms produce a high hit rate.
+
 
 \begin{figure}[t]
 \center
@@ -86,15 +94,15 @@ The algorithms were compared over the 1055 images of the WWU Muenster Barcode Da
 \hline
 \textbf{Gradient + Blur}& 831& 22\%& 266\\
 \hline
-\textbf{LSD + Wachenfeld}& 452& 56\%& 319\\
+\textbf{LSD + Variation}& 279& 74\%& 1595\\
 \hline
 \textbf{LSD + LSDBounds}& 41& 97\%& 1760\\
 \hline
-\textbf{LSD + Variation}& 279& 74\%& 1595\\
+\textbf{LSD + Wachenfeld}& 452& 56\%& 319\\
 \hline
 \end{tabular}
 \egroup
-\caption{Comparison of different algorithms on the WWU Muenster Barcode Database.}
+\caption{Comparison of different algorithms on the WWU Muenster Barcode Database. All algorithms use Template Matching to read the barcode.}
 \label{laufzeit}
 \end{figure}
  
