@@ -1,0 +1,10 @@
+In this work we have seen how different algorithms compare against each other in detecting barcodes.
+
+After some initial comparisons of Gradient+Blur and LSD we decided to go with the latter because of the superior localization quality. And since we were satisfied with the high quality of the readings performed by the Template Matching we decided to focus our efforts on improving the overall hit rate by implementing additional boundary detection algorithms.
+
+While comparing the Wachenfeld boundary detection against the Variation boundary detection we have shown that by sacrificing speed and increasing complexity we can increase the detection rate. Since we wanted to maximize the overall hit rate with regards to the competition within the scope of the practical course we improved on the Variation boundary detector by sacrificing more time and resources in favor of the LSDBound algorithm.
+
+Obviously our methodology is not applicable for real time usage in the wild. A more fitting approach would be to implement a fast and simple algorithm like gradient blur enhanced with additional scan line based refinement like the Wachenfeld algorithm with optimized preprocessing and reading step. In a real time application the algorithm could depend on the user to provide sharp and disturbance free images with centered barcodes without rotation. 
+\\
+\\
+Finally our work can be summarized with: Higher accuracy detection and recognition of barcodes in a non-constrained system takes more time and resources.
