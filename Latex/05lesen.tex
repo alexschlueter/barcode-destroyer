@@ -10,27 +10,6 @@ Our reading method is taken from \cite{Gallo2011} and is based on matching
 deformable templates to a 1D scanline obtained from the localization and
 boundary detection steps.
 
-Let us first describe the structure of an EAN-13 barcode \cite{GS12017}:
-The smallest width of a bar is called the base width. A typical digit is encoded
-in four bars, alternating black and white, where the number of base widths
-of each bar is variable, but the total number of base widths of all four bars is seven.
-The exact number of base widths of each bar encodes a specific digit as well as a digit
-type, one of A, B or C.
-
-A barcode is now composed as follows:
-\begin{enumerate}
-\item A left quiet zone,
-\item a guard pattern, consisting of three bars, each one base width,
-\item six digits of type A or B,
-\item a center guard pattern, consisting of five bars, each one base width,
-\item six digits of type C,
-\item a guard pattern, same as 2.,
-\item a right quiet zone.
-\end{enumerate}
-
-The pattern types (A or B) of the first six read digits encode the actual first
-digit of the barcode. The last digit is a check digit and has to match the digit
-obtained through a calculation based on the other digits.
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "00Ausarbeitung.tex"

@@ -1,5 +1,44 @@
-\begin{itemize}
-\item Motivation
-\item Barcodes und EAN13
-\item Aufteilung in Lokalisation+Boundary+Reading
-\end{itemize}
+The goal of this project is to read barcodes in given images. The barcodes can
+be arbitrarily translated, rotated and scaled in the image. The perspective
+might be skewed and parts of the image might be out of focus or suffer from bad
+lighting and glare spots. These images are typically obtained by mobile phone
+cameras, without requiring the user to center the barcode in the image, or to
+wait until the autofocus is fully adjusted.
+
+There are no time or performance constrains placed on our detection.
+
+Let us first describe the structure of an EAN-13 barcode \cite{GS12017}:
+The smallest width of a bar is called the base width. A typical digit is encoded
+in four bars, alternating black and white, where the number of base widths
+of each bar is variable, but the total number of base widths of all four bars is seven.
+The exact number of base widths of each bar encodes a specific digit as well as a digit
+type, one of A, B or C.
+
+A barcode is now composed as follows:
+\begin{enumerate}
+\item A left quiet zone,
+\item a guard pattern, consisting of three bars, each one base width,
+\item six digits of type A or B,
+\item a center guard pattern, consisting of five bars, each one base width,
+\item six digits of type C,
+\item a guard pattern, same as 2.,
+\item a right quiet zone.
+\end{enumerate}
+
+The pattern types (A or B) of the first six read digits encode the actual first
+digit of the barcode. The last digit is a check digit and has to match the digit
+obtained through a calculation based on the other digits.
+
+We implemented and compared multiple methods. The methods can be divided into
+three general steps:
+\begin{enumerate}
+\item \textbf{Localization}: finding the general location and orientation of the barcode
+  in the image
+\item \textbf{Boundary Detection}: determining the barcode's left and right boundaries
+\item \textbf{Reading}
+\end{enumerate}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "00Ausarbeitung.tex"
+%%% End:
