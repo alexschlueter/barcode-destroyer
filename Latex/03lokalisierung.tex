@@ -6,7 +6,10 @@ Our initial localization attempt showed limited success, but is conceptually ver
 \begin{enumerate}
 	\item Edge Detection
 	
-	We begin by detecting edges with the Sobel operator. We calculate the absolute gradient, discarding direction information. This leads to slightly worse results for barcodes rotated by about 45 degrees. The resulting image will usually contain large amounts of noise. This is fixed in the next step. 
+	We begin by detecting edges with the Sobel operator. We calculate the absolute
+  difference of the x- and y-gradients $\abs{\partial_x I - \partial_y I}$,
+  discarding direction information.
+  This leads to slightly worse results for barcodes rotated by about 45 degrees. The resulting image will usually contain large amounts of noise. This is fixed in the next step. 
 
 	\item Blur+Threshold
 	
@@ -44,7 +47,7 @@ in a purely random level line field, the found ratio of aligned level lines is u
 Before a rectangle is rejected, some variations of the rectangle's parameters
 are tried.
 
-The barcode localization method is taken from \citeauthor{Creusot2016} with minor modifications. First we run
+The barcode localization method is taken from \citeauthor{Creusot2016} \cite{Creusot2016} with minor modifications. First we run
 the LineSegmentDetector provided by OpenCV on the image. We use default
 parameters, except for the first parameter LSD\_REFINE\_NONE, which disables
 refinement of line segments. We found that line refinement tends to break up
