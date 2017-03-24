@@ -107,8 +107,10 @@ def updateCells(cells):
     return newcells
 
 colors = ['r', 'b', 'g', 'm', 'c', 'y', 'k']
+colors = 3*colors
 for d,rs in upc:
     rs = list(reversed(rs))
+    rs = [1,1,1]+rs
     print(rs)
     rs += [1]
     cells = [([(0,0),(1,0),(1,1),(0,1)],[])]

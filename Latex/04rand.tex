@@ -52,9 +52,12 @@ extend an inner probe from the projected center of the boundary segment along th
 barcode. Extend an outer probe in the opposite direction, away from the barcode.
 The inner probe is expected to cross a large number of line segments parallel to
 and located next to the best line (i.e. segments which have not been
-filtered out in the previous step). The outer probe is expected to cross fewer
+filtered out in the previous step). The outer probe is expected to cross very few
 such lines.
-...
+For each index $k$, a score is assigned to both probes
+\begin{equation*}
+ s(k)=\sum_{j=-R}(l_*-c_j)\cdot \max(0, l_*-\abs{l_*-l_j})
+\end{equation*}
 
 \subsection[Wachenfeld]{Wachenfeld}
 Another implementation was adapted from the barcode detection and recognition algorithms proposed by Wachenfeld et al. \cite{wachenfeld2008robust}. The method is subdivided into the three steps of preprocessing, barcode edge detection and hypothesis based reading. Since we implemented barcode localization (\cref{sec:Localization}) and barcode reading (\cref{sec:Reading}) as separate steps only the edge detection with a bit of preprocessing is adapted.
