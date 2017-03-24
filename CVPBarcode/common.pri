@@ -1,7 +1,7 @@
 QT  += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++14
-QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-but-set-variable -Wno-reorder -Wno-maybe-uninitialized
+QMAKE_CXXFLAGS += -Wall -Werror -Wextra -pedantic -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-but-set-variable -Wno-reorder -Wno-maybe-uninitialized -Wno-format-security
 
 TEMPLATE = app
 

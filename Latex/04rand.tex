@@ -49,15 +49,14 @@ are sorted based on the position of the projection of their centers onto the
 bisector line. The boundary segments should have the following property: As before,
 extend an inner probe from the projected center of the boundary segment along the bisector, pointing inside the
 barcode. Extend an outer probe in the opposite direction, away from the barcode.
-The inner probe is expected to cross a large number of line segments parallel to
-and located next to the best line (i.e. segments which have not been
-filtered out in the previous step). The outer probe is expected to cross very few
+The inner probe is expected to cross a large number of line segments which have not been
+filtered out in the previous step. The outer probe is expected to cross very few
 such lines.
 For each index $k$, a score is assigned to both probes
 \begin{equation*}
  s(k)=\sum_{j=-R}(l_*-c_j)\cdot \max(0, l_*-\abs{l_*-l_j})\,.
 \end{equation*}
-The first factor again weighs line segments higher if they are close to the
+The first factor weighs line segments higher if they are close to the
 current boundary segment candidate. The second factor weighs segments higher if
 their length is close to the best line's length.
 For each index $k$, we now subtract the outer probe's score from the inner
