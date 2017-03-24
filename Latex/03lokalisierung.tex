@@ -73,15 +73,14 @@ denotes the first or the second line segment, respectively. The used criteria ar
 \begin{equation*}
 d_{\text{center}}\coloneqq\frac{\norm{c_1-c_2}}{l_1}<1,\qquad \frac{\abs{l_1-l_2}}{l_1}<0.3,\qquad \abs{\alpha_1-\alpha_2}<0.1\,.
 \end{equation*}
-As BIIIIIIILD shows, two lines fulfilling the first three criteria might
-still not be arranged like barcode bars, if they are displaced along the line
-direction. To catch these cases, we project the second line onto the
-first and check that the intersection is large enough relative to the length of
-the smaller line, see BIIIIIIILD2.
+Two lines fulfilling the first three criteria might still not be arranged like
+barcode bars, if they are displaced along the line direction. To catch these
+cases, we project the second line onto the first and check that the intersection
+is large enough relative to the length of the smaller line.
 
 For each line segment which fulfills the criteria, \citeauthor{Creusot2016}
-increment the score of the first line by one. Instead, we increment the score of the
-first line segment by $1-d_{\text{center}}$. This effectively weights the score by the distance
+increment the score of the first line segment by one. Instead, we increment the score of the
+first line segment by $1-d_{\text{center}}$. This effectively weighs the score by the distance
 between the line segments, which favors line segments which lie in
 the middle of the barcode.
 

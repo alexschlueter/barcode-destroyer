@@ -2,12 +2,12 @@
 \subsubsection*{Gradient + Blur}
 Pros:
 
-Gradien+Blur is conceptually extremely simple and therefor extremely fast. It also is robust against disturbances like reflections since it only looks for the biggest contour.
+Gradien+Blur is conceptually extremely simple and therefore extremely fast. It also is robust against disturbances like reflections since it only looks for the biggest contour.
 \\
 \\
 Cons:
 
-Since the algorithm uses the absolute gradient it is quite weak against rotations of 45 degrees. Gradient+Blur is also dependent on many parameters. If these parameters don't match up with the barcode the algorithm fails. One such instance is a too small kernel size for the closing step, which leads to a fragmented contour because it fails to close the white segments. An example of this can be seen in \cref{failgradblur}. Another problem is the susceptibility to noise. Gradient+Blur could mistake the wrong contour for the barcode.
+Since the algorithm uses the absolute gradient difference it is quite weak against rotations of 45 degrees. Gradient+Blur is also dependent on many parameters. If these parameters don't match up with the barcode the algorithm fails. One such instance is a too small kernel size for the closing step, which leads to a fragmented contour because it fails to close the white segments. An example of this can be seen in \cref{failgradblur}. Another problem is the susceptibility to noise. Gradient+Blur could mistake the wrong contour for the barcode.
 
 \begin{figure}[t]
 \center
@@ -24,22 +24,31 @@ The LSD is still relatively fast and can reliably detect a barcode in almost eve
 \\
 Cons:
 
-The LSD looks for all parallel lines. If other parallel lines are parallel to the barcode and close enough they can be added to the barcode by mistake. Disturbances like reflections can also break barcode lines and lead to exclusion valid lines.
+The LSD looks for all parallel lines. If there are textures in the image with a
+large number of parallel lines, these could be mistaken for a barcode. Disturbances like reflections can also break barcode lines and lead to exclusion valid lines.
 
 \subsubsection*{Variation}
 Pros:
 
-Variation
+The variation boundary finder is not dependent on the line segments returned by
+LSD, so that good boundaries can still be found even if the LSD result is bad
+due to glare spots, bad focus, etc. 
 \\
 \\
 Cons:
 
-Variation
+Structures with large variation next to the barcode, such as text, can result in the boundaries
+being extended beyond the barcode. Additionally, the bars of the outer guard
+patterns are very thin and may not result in enough variation, especially if
+there is some amount of blur. The variation boundary finder will tend to cut off
+the last few bars on each side.
 
 \subsubsection*{LSD Bound}
 Pros:
 
-The LSD Boundary Detection is extremely accurate since it test all significant lines determent by the LSD localization and returns multiple potentiality boundary points.
+Because of the high quality of line segments returned by LSD, this method is
+very good at accurately determining the boundary segments. We return
+multiple candidates on each side, so that some variance can be dealt with.
 \\
 \\
 Cons:
@@ -49,12 +58,12 @@ Since it is strongly dependent on the LSD localization it fails as soon as the L
 \subsubsection*{Wachenfeld}
 Pros:
 
-The Wachenfeld algorithm is relatively quick since it is based on a scan line.
+The Wachenfeld algorithm is relatively quick since it is based on a scanline.
 \\
 \\
 Cons:
 
-The algorithm is strongly dependent on the quality of the preprocessing and detection of local extrema. And since the algorithm is based on a scan line it has no way to deal with broken barcodes caused by disturbances as seen in \cref{failwachenfeld}. Finally if the last segment selection steps misses the barcode can be shifted to the left or right and become unreadable.
+The algorithm is strongly dependent on the quality of the preprocessing and detection of local extrema. And since the algorithm is based on a scanline it has no way to deal with broken barcodes caused by disturbances as seen in \cref{failwachenfeld}. Finally, if the last segment selection steps misses, the barcode can be shifted to the left or right and become unreadable.
 
 \begin{figure}[t]
 \center
@@ -68,7 +77,9 @@ The algorithm is strongly dependent on the quality of the preprocessing and dete
 \subsubsection*{Template Matching}
 Pros:
 
-Since no binarization is required template matching is extremely robust against bluered barcodes. The algorithm also uses percentages to read the barcode and is therefor flexible when encountering errors. 
+Since no binarization is required, template matching is extremely robust against
+blurred barcodes. Some uncertainty in the localization and boundary detection
+can be dealt with.
 \\
 \\
 Cons:
@@ -89,15 +100,24 @@ The implemented algorithms were tested on three datasets.
 2 sets of 215 images, 800$\times$600 px.
 \end{itemize}
 
-\subsection{Run-Time and Hit Rate Comparison}
+\subsection{Run time and Accuracy Comparison}
 The algorithms were compared over the 1055 images of the WWU Muenster Barcode Database \citep{MuensterBarcodeDB}. The programm was implemented in C++ with the help of the Qt 5.7 and OpenCV 3.1 frameworks. The test were made on a Debian 8 system with an Intel N2940 CPU, 4 Cores / 4 Threads, and 4 GB RAM. The results are shown in \cref{laufzeit}.
 \\
 \\
-The experimental results illustrate the pros and cons of the various algorithms shown in \cref{sec:ProCon}. The Gradient+Blur algorithm performs the best in respect to speed but the worst in respect to hit rate. The simplicity of the method is directly apparent. But the listed problems cause it to miss the boundaries or even fail to detect the barcode.
+The experimental results illustrate the pros and cons of the various algorithms
+shown in \cref{sec:ProCon}. The Gradient+Blur algorithm performs the best in
+respect to speed but the worst in respect to accuracy. The simplicity of the
+method is directly apparent, but the listed problems cause it to miss the boundaries or even fail to detect the barcode.
 
-Second best algorithm in speed is the Wachenfeld boundary detection. This is primary achieved through the usage of scan lines. But the unoptimized preprocessing causes the algorithm to miss the boundaries in over 40\% of tests since the dynamic thresholding fails to apply.
+The second fastest algorithm is the Wachenfeld boundary detection. This is
+primary achieved through the usage of a single scanline. But the unoptimized
+preprocessing causes the algorithm to miss the boundaries in over 40\% of tests
+since the dynamic thresholding fails to accurately binarize the scanline.
 
-Both Variation Boundary Detection and LSDBounds take a very long time to detect the boundaries. This is caused by the multiple computation heavy probings of possible boundaries. But since the correct boundaries are inevitable to be probed and the algorithms produces multiple candidates both algorithms produce a high hit rate.
+Both Variation Boundary Detection and LSDBounds take a very long time. This is caused by the multiple computation heavy probings of
+possible boundaries, which results in 126 different scanlines being read for
+each barcode. However, this allows a correct barcode to be read even if some
+boundary detections are invalid, which results in a high accuracy.
 
 
 \begin{figure}[t]
@@ -106,7 +126,7 @@ Both Variation Boundary Detection and LSDBounds take a very long time to detect 
 \def\arraystretch{1.5}
 \begin{tabular}{|l|r|r|r|}
 \hline
-&\textbf{Errors}&\textbf{Hit rate}&\textbf{Time in sec.}\\
+&\textbf{Errors}&\textbf{Accuracy}&\textbf{Time in sec.}\\
 \hline
 \textbf{Gradient + Blur}& 831& 22\%& 266\\
 \hline
@@ -122,3 +142,7 @@ Both Variation Boundary Detection and LSDBounds take a very long time to detect 
 \label{laufzeit}
 \end{figure}
  
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "00Ausarbeitung.tex"
+%%% End:

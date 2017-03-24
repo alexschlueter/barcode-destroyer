@@ -42,27 +42,35 @@ described above. The goal is to determine the line segments corresponding to the
 outer barcode bars, the \emph{boundary segments}.
 
 We first filter the line segments, so that only segments parallel to and located
-next to the best
-line are kept. To that end, we use the angle criterion and the criterion of sufficient
-projected intersection as described in \cref{sec:LSD}. The remaining segments
-are sorted based on the position of the projection of their centers onto the
-bisector line. The boundary segments should have the following property: As before,
-extend an inner probe from the projected center of the boundary segment along the bisector, pointing inside the
-barcode. Extend an outer probe in the opposite direction, away from the barcode.
-The inner probe is expected to cross a large number of line segments which have not been
-filtered out in the previous step. The outer probe is expected to cross very few
-such lines.
-For each index $k$, a score is assigned to both probes
+next to the best line are kept. To that end, we use the angle criterion and the
+criterion of sufficient projected intersection as described in \cref{sec:LSD}.
+Let $\set{s_k}_{k=1}^N$ be the sequence of remaining line segments and let
+$l_k$ be the length of the $k$-th segment. Let $\set{c_k}_{k=1}^N$ be the
+real numbers which result from the projection of the segment centers onto the
+bisector. We sort the segments by their center projection, such that $c_i<c_j$ for all $i<j$.
+
+The boundary segments should have the following
+property: As before, extend an inner probe from the projected center of the
+boundary segment along the bisector, pointing inside the barcode. Extend an
+outer probe in the opposite direction, away from the barcode. The inner probe is
+expected to cross a large number of line segments which have not been filtered
+out in the previous step, while the outer probe is expected to cross very few such
+lines.
+
+We used probing lines with length equal to the length of the best line, $l_*$.
+For each boundary segment candidate $s_k$, a score is assigned to both probes. For each other
+line segment $s_j$ that is crossed by the probe, the value
 \begin{equation*}
- s(k)=\sum_{j=-R}(l_*-c_j)\cdot \max(0, l_*-\abs{l_*-l_j})\,.
+ d_{jk}=(l_*-\abs{c_j-c_k})\cdot \max(0, l_*-\abs{l_*-l_j})
 \end{equation*}
+is added to the probing line's score.
 The first factor weighs line segments higher if they are close to the
 current boundary segment candidate. The second factor weighs segments higher if
 their length is close to the best line's length.
-For each index $k$, we now subtract the outer probe's score from the inner
-probe's score and assign the result as score of the line segment with index $k$.
+To calculate the score of $s_k$, we now subtract the outer probe's score from the inner
+probe's score.
 On each side of the best line, we select the three segments with the highest
-score as boundary candidates and try all combinations of those in the reading step.
+score as final boundary candidates and try all combinations of those in the reading step.
 
 \subsection[Wachenfeld]{Wachenfeld}
 Another implementation was adapted from the barcode detection and recognition algorithms proposed by Wachenfeld et al. \cite{wachenfeld2008robust}. The method is subdivided into the three steps of preprocessing, barcode edge detection and hypothesis based reading. Since we implemented barcode localization (\cref{sec:Localization}) and barcode reading (\cref{sec:Reading}) as separate steps only the edge detection with a bit of preprocessing is adapted.

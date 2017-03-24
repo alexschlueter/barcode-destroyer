@@ -20,11 +20,20 @@ This problem could be fixed in two related ways: First, we could try a \emph{lin
 This first approach has the weakness of only working when the reflection splits the line segment into two parts. Even better would be an approach that could handle a missing endpoint. This should be handled by this second approach, which is also more complicated: Instead of uniting line segments, we would now consider the endpoints of line segments in a second pass over all segments. During the first pass, whenever a pair of lines is considered to likely be part of the same barcode, save the location of their endpoints in two different lists, based on distance from the origin. After this first pass, those lists can easily construct the upper and lower bound of the barcode. With this new information, discard the previous scores and redo them. However, this time, instead of checking for similar length, check whether two line segments have an endpoint near one of those two lines before assigning a score to them. This second pass will now also handle missing endpoints.
 
 \subsection{Wachenfeld}
-\subsubsection*{Proper preprocessing, multiple scanlines}
-
-Since we have found quick success with the LSD-Boundary detection, our current implementation of the Wachenfeld algorithm does not prepare the image in the way recommended in the original paper, that is, there is no adaptive thresholding along the scanline, which is a major factor of success for the original implementation. Thus, proper initialization would likely greatly improve our results. Also, we could detect along multiple scanlines and vote for most likely boundaries.
+\subsubsection*{Better pruning, multiple scanlines}
+The pruning of unusually high minima / low maxima is a very sensitive part of
+the algorithm, but is not described in detail in the paper. Further tuning of
+this step could possibly improve the performance.
+Also, we could detect along multiple scanlines and vote for most likely boundaries.
 
 \subsection{Template Matching}
 \subsubsection*{Precompute patterns for blur of various strengths}
 
 While the algorithm is already very capable in handling blurred barcodes, this might be improved even further by precomputing patterns specifically not for an ideal, clean barcode, but for one that is already blurred.
+False positives could be eliminated by returning a reading failure if the
+total matching cost is above a certain threshold.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "00Ausarbeitung.tex"
+%%% End:
